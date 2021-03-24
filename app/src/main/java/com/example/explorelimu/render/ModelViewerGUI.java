@@ -1,4 +1,4 @@
-package com.example.render.view;
+package com.example.explorelimu.render;
 
 import android.util.Log;
 

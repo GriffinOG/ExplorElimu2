@@ -28,7 +28,7 @@
         <activity
             android:name=".AddModelActivity"
             android:label="Model Details"
-            android:parentActivityName=".view.ModelActivity" />
+            />
         <activity android:name=".MainActivity"></activity>
         <activity
             android:name=".view.MenuActivity"
@@ -38,10 +38,7 @@
             android:name=".view.TextActivity"
             android:label="@string/title_activity_text"
             android:parentActivityName=".MainActivity" />
-        <activity
-            android:name=".view.ModelActivity"
-            android:label="@string/title_activity_model"
-            android:parentActivityName=".MainActivity" />
+
     </application>
 
 </manifest>

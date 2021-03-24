@@ -5,7 +5,6 @@ import android.os.Bundle
 import android.view.Menu
 import androidx.appcompat.app.AppCompatActivity
 import com.example.render.view.MenuActivity
-import com.example.render.view.ModelActivity
 import org.andresoviedo.util.android.AndroidURLStreamHandlerFactory
 import java.net.URL
 
