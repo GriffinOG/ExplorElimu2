@@ -18,11 +18,11 @@ import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
+import com.example.explorelimu.render.ModelActivity
 import com.example.explorelimu.ui.members.MembersFragment
 import com.example.explorelimu.util.USER_TYPE
 import com.example.explorelimu.xmpp.RoosterConnection
 import com.example.explorelimu.xmpp.RoosterConnectionService
-import com.example.render.view.ModelActivity
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import org.andresoviedo.util.android.AndroidURLStreamHandlerFactory

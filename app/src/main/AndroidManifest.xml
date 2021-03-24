@@ -25,9 +25,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name="com.example.render.MainActivity"
-            android:label="@string/title_activity_main" />
+
         <activity
             android:name=".MainActivity"
             android:label="@string/title_activity_main" />

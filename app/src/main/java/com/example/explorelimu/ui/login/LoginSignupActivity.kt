@@ -17,9 +17,6 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
-import com.example.render.MainActivity
-import com.example.explorelimu.ModelListActivity
 import com.example.explorelimu.R
 import com.example.explorelimu.xmpp.RoosterConnectionService
 import com.google.android.material.textfield.TextInputEditText

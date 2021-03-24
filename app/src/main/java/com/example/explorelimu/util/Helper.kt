@@ -10,8 +10,8 @@ import com.android.volley.Response
 import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
 import com.example.explorelimu.MainActivity
+import com.example.explorelimu.render.ModelActivity
 import com.example.render.Global
-import com.example.render.view.ModelActivity
 import com.google.android.gms.tasks.OnFailureListener
 import com.google.android.gms.tasks.OnSuccessListener
 import com.google.firebase.storage.FileDownloadTask

@@ -78,10 +78,10 @@ public class MenuActivity extends ListActivity {
         try {
             switch (action) {
                 case DEMO:
-                    Intent demoIntent = new Intent(MenuActivity.this.getApplicationContext(), ModelActivity.class);
-                    demoIntent.putExtra("immersiveMode", "false");
-                    demoIntent.putExtra("backgroundColor", "0 0 0 1");
-                    MenuActivity.this.startActivity(demoIntent);
+//                    Intent demoIntent = new Intent(MenuActivity.this.getApplicationContext(), ModelActivity.class);
+//                    demoIntent.putExtra("immersiveMode", "false");
+//                    demoIntent.putExtra("backgroundColor", "0 0 0 1");
+//                    MenuActivity.this.startActivity(demoIntent);
                     break;
                 case GITHUB:
                     AndroidUtils.openUrl(this, "https://github.com/andresoviedo/android-3D-model-viewer");
@@ -406,29 +406,29 @@ public class MenuActivity extends ListActivity {
     }
 
     public void launchModelRendererActivity(Uri uri) {
-        Log.i("Menu", "Launching renderer for '" + uri + "'");
-        Intent intent = new Intent(getApplicationContext(), ModelActivity.class);
-        try {
-            URI.create(uri.toString());
-            intent.putExtra("uri", uri.toString());
-        } catch (Exception e) {
-            // info: filesystem url may contain spaces, therefore we re-encode URI
-            try {
-                intent.putExtra("uri", new URI(uri.getScheme(), uri.getAuthority(), uri.getPath(), uri.getQuery(), uri.getFragment()).toString());
-            } catch (URISyntaxException ex) {
-                Toast.makeText(this, "Error: " + uri.toString(), Toast.LENGTH_LONG).show();
-                return;
-            }
-        }
-        intent.putExtra("immersiveMode", "false");
-
-        // content provider case
-        if (!loadModelParameters.isEmpty()) {
-            intent.putExtra("type", loadModelParameters.get("type").toString());
-            //intent.putExtra("backgroundColor", "0.25 0.25 0.25 1");
-            loadModelParameters.clear();
-        }
-
-        startActivity(intent);
+//        Log.i("Menu", "Launching renderer for '" + uri + "'");
+//        Intent intent = new Intent(getApplicationContext(), ModelActivity.class);
+//        try {
+//            URI.create(uri.toString());
+//            intent.putExtra("uri", uri.toString());
+//        } catch (Exception e) {
+//            // info: filesystem url may contain spaces, therefore we re-encode URI
+//            try {
+//                intent.putExtra("uri", new URI(uri.getScheme(), uri.getAuthority(), uri.getPath(), uri.getQuery(), uri.getFragment()).toString());
+//            } catch (URISyntaxException ex) {
+//                Toast.makeText(this, "Error: " + uri.toString(), Toast.LENGTH_LONG).show();
+//                return;
+//            }
+//        }
+//        intent.putExtra("immersiveMode", "false");
+//
+//        // content provider case
+//        if (!loadModelParameters.isEmpty()) {
+//            intent.putExtra("type", loadModelParameters.get("type").toString());
+//            //intent.putExtra("backgroundColor", "0.25 0.25 0.25 1");
+//            loadModelParameters.clear();
+//        }
+//
+//        startActivity(intent);
     }
 }

@@ -26,6 +26,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.explorelimu.xmpp.RoosterConnectionService;
 import com.example.render.AddModelActivity;
 import com.example.render.R;
 import com.example.render.ReviewActivity;
@@ -560,20 +561,13 @@ public class ModelActivity extends AppCompatActivity implements EventListener {
     @Override
     protected void onStart() {
         super.onStart();
-        Intent intent = null;
-        try {
-            intent = new Intent(this,
-                    Class.forName("com.example.explorelimu.xmpp.RoosterConnectionService"));
-            bindService(intent, serviceConnection, BIND_AUTO_CREATE);
+        Intent intent = new Intent(this, RoosterConnectionService.class);
+        bindService(intent, serviceConnection, BIND_AUTO_CREATE);
 
-            Intent broadcastIntent = new Intent("com.myapp.main.TEST_INTENT");
-            broadcastIntent.putExtra("value", 0);
-            broadcastIntent.setComponent(new ComponentName("com.example.explorelimu.xmpp", "com.example.explorelimu.xmpp.MessageReceiver"));
+        Intent broadcastIntent = new Intent("com.myapp.main.TEST_INTENT");
+        broadcastIntent.putExtra("value", 0);
 
-            sendBroadcast(broadcastIntent);
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        }
+        sendBroadcast(broadcastIntent);
     }
 
     @Override
