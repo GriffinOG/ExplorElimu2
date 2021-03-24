@@ -1,0 +1,71 @@
+<resources>
+    <string name="app_name">ExplorElimu</string>
+    <string name="title_activity_login">LoginActivity</string>
+    <string name="prompt_email">Email</string>
+    <string name="prompt_password">Password</string>
+    <string name="action_sign_in">Sign in or register</string>
+    <string name="action_sign_in_short">Sign in</string>
+    <string name="welcome">"Welcome !"</string>
+    <string name="invalid_email">Not a valid email</string>
+    <string name="invalid_username">Not a valid username</string>
+    <string name="school_not_selected">You have not selected any school</string>
+    <string name="invalid_password">Password must be >5 characters</string>
+    <string name="login_failed">"Login failed"</string>
+    <string name="reg_failed">"Registration failed"</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="log_in">log in</string>
+    <string name="username">Username</string>
+    <string name="confirm_password">Confirm password</string>
+    <string name="sign_up">Sign up</string>
+    <string name="school">School</string>
+    <string name="educator">Educator</string>
+    <string name="school_email">(School) Email</string>
+    <string name="i_don_t_have_an_account">I don\'t have an account</string>
+    <string name="i_ve_done_this_before">I\'ve done this before</string>
+
+    <string name="invalid_display_name">Not a valid name</string>
+    <string name="invalid_password_confirmation">Passwords do not match</string>
+
+    <string name="login_connection_error">"Login failed. Check your connection and try again."</string>
+    <string name="login_username_password_error">"Login failed. Make sure your username and password are correct."</string>
+    <string name="login_Interruption_error">"Login failed. Connection interrupted."</string>
+    <string name="login_IO_error">"Login failed. Input-Output error."</string>
+
+    <string name="sign_up_connection_error">"Sign-up failed. Check your connection and try again."</string>
+    <string name="sign_up_phone_error">"Sign-up failed. Try re-typing your phone number."</string>
+    <string name="sign_up_Interruption_error">"Sign-up failed. Connection interrupted."</string>
+    <string name="sign_up_IO_error">"Sign-up failed. Input-Output error."</string>
+
+    <string-array name="schools_array">
+        <item>University of Nairobi</item>
+        <item>Catholic University</item>
+        <item>Kenyatta University</item>
+        <item>JKUAT</item>
+        <item>Strathmore University</item>
+        <item>Egerton University</item>
+    </string-array>
+    <string name="title_activity_main">MainActivity</string>
+    <string name="title_home">Home</string>
+    <string name="title_dashboard">Dashboard</string>
+    <string name="title_notifications">Notifications</string>
+    <string name="teachers">Teachers</string>
+    <string name="models">Models</string>
+    <string name="classes">Classes</string>
+    <string name="members">Members</string>
+    <string name="single_model">1 model</string>
+    <string name="model_count">%1$d models</string>
+    <string name="upload_model">Upload model</string>
+    <string name="upload">Upload</string>
+    <string name="subscribe">Subscribe</string>
+    <string name="ip_addr">10.6.61.206</string>
+    <string name="service_domain_name">griffin.chatdiary.com</string>
+    <string name="drop">Drop</string>
+    <string name="add_class">Add class</string>
+    <string name="start">start</string>
+    <string name="sub_notification">Subscription notification</string>
+    <string name="sub_not_desc">Notification of new subscriber</string>
+    <string name="muc_service">conference.griffin.chatdiary.com</string>
+    <string name="channel_name">New session</string>
+    <string name="channel_description">Notification of new session</string>
+</resources>

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mobile_navigation"
+    app:startDestination="@+id/navigation_members">
+
+    <fragment
+        android:id="@+id/navigation_members"
+        android:name="com.example.explorelimu.ui.members.MembersFragment"
+        android:label="@string/members"
+        tools:layout="@layout/fragment_members" />
+
+    <fragment
+        android:id="@+id/navigation_categories"
+        android:name="com.example.explorelimu.ui.models.CategoriesFragment"
+        android:label="@string/models"
+        tools:layout="@layout/fragment_models" >
+
+        <action
+            android:id="@+id/actionCategoryModels"
+            app:destination="@id/navigation_category_models"
+            app:enterAnim="@anim/nav_default_enter_anim"
+            app:exitAnim="@anim/nav_default_exit_anim"
+            app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+            app:popExitAnim="@anim/nav_default_pop_exit_anim"/>
+    </fragment>
+
+    <fragment
+        android:id="@+id/navigation_classes"
+        android:name="com.example.explorelimu.ui.classes.ClassesFragment"
+        android:label="@string/classes"
+        tools:layout="@layout/fragment_classes" />
+
+    <fragment
+        android:id="@+id/navigation_category_models"
+        android:name="com.example.explorelimu.ui.models.ModelsFragment"
+        android:label="@string/models"
+        tools:layout="@layout/fragment_models">
+
+        <action android:id="@+id/action_models_to_categories"
+            app:destination="@id/navigation_categories"
+            app:enterAnim="@anim/nav_default_enter_anim"
+            app:exitAnim="@anim/nav_default_exit_anim"
+            app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+            app:popExitAnim="@anim/nav_default_pop_exit_anim"
+            app:popUpTo="@id/navigation_category_models"
+            app:popUpToInclusive="true"/>
+    </fragment>
+</navigation>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/navigation_members"
+        android:icon="@drawable/ic_baseline_person_24"
+        android:title="@string/members" />
+
+    <item
+        android:id="@+id/navigation_categories"
+        android:icon="@drawable/ic_baseline_panorama_photosphere_select_24"
+        android:title="@string/models" />
+
+    <item
+        android:id="@+id/navigation_classes"
+        android:icon="@drawable/ic_baseline_class_24"
+        android:title="@string/classes" />
+
+</menu>

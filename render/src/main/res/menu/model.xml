@@ -1,0 +1,136 @@
+<menu xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android" >
+
+    <item
+        android:id="@+id/model_explode"
+        android:icon="@drawable/ic_baseline_control_camera_24"
+        android:orderInCategory="100"
+        android:title="@string/toggle_explode"
+        app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/clear_selections"
+        android:icon="@drawable/ic_baseline_highlight_off_24"
+        android:orderInCategory="100"
+        android:title="@string/clear_selections"
+        app:showAsAction="ifRoom"/>
+
+    <item
+        android:id="@+id/model_toggle_lights"
+        android:icon="@drawable/ic_baseline_menu_24"
+        android:orderInCategory="100"
+        android:title="@string/toggle_lights"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/model_toggle_wireframe"
+        android:icon="@drawable/ic_baseline_ac_unit_24"
+        android:orderInCategory="100"
+        android:title="@string/toggle_wireframe"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/model_upload"
+        android:icon="@drawable/ic_baseline_cloud_upload_24"
+        android:orderInCategory="200"
+        android:title="@string/upload"
+        app:showAsAction="ifRoom" />
+
+    <group
+        android:id="@+id/selection_mode"
+        android:checkableBehavior="single"
+        android:enabled="true">
+        <item android:id="@+id/wire_out_selection"
+            android:title="@string/wire_out"
+            android:icon="@drawable/ic_baseline_leak_remove_24"
+            app:showAsAction="never"
+            android:checked="true"
+            />
+        <item android:id="@+id/isolate_selection"
+            android:title="@string/isolate"
+            android:icon="@drawable/ic_baseline_outbound_24"
+            app:showAsAction="never"
+            android:enabled="true"/>
+        <item android:id="@+id/drop_selection"
+            android:title="@string/drop"
+            android:icon="@drawable/ic_baseline_remove_circle_24"
+            app:showAsAction="never"
+            android:enabled="true"/>
+    </group>
+<!--    <item-->
+<!--        android:id="@+id/model_toggle_skybox"-->
+<!--        android:icon="@android:drawable/ic_menu_gallery"-->
+<!--        android:orderInCategory="300"-->
+<!--        android:title="Toggle Sky Box"-->
+<!--        app:showAsAction="ifRoom" />-->
+<!--    <item-->
+<!--        android:id="@+id/model_toggle_textures"-->
+<!--        android:icon="@android:drawable/ic_menu_gallery"-->
+<!--        android:orderInCategory="300"-->
+<!--        app:showAsAction="ifRoom"-->
+<!--        android:title="@string/toggle_textures"/>-->
+<!--    <item-->
+<!--        android:id="@+id/model_toggle_animation"-->
+<!--        android:icon="@android:drawable/ic_menu_gallery"-->
+<!--        android:orderInCategory="500"-->
+<!--        app:showAsAction="ifRoom"-->
+<!--        android:title="@string/toggle_animation"/>-->
+<!--    <item-->
+<!--        android:id="@+id/model_toggle_smooth"-->
+<!--        android:icon="@android:drawable/ic_menu_gallery"-->
+<!--        android:orderInCategory="600"-->
+<!--        app:showAsAction="ifRoom"-->
+<!--        android:title="Toggle Smooth"/>-->
+<!--    <item-->
+<!--        android:id="@+id/model_load_texture"-->
+<!--        android:icon="@android:drawable/ic_menu_gallery"-->
+<!--        android:orderInCategory="650"-->
+<!--        app:showAsAction="ifRoom"-->
+<!--        android:title="@string/load_texture"/>-->
+<!--    <item-->
+<!--        android:id="@+id/model_toggle_stereoscopic"-->
+<!--        android:icon="@android:drawable/ic_menu_gallery"-->
+<!--        android:orderInCategory="700"-->
+<!--        app:showAsAction="ifRoom"-->
+<!--        android:title="Toggle Stereoscopic"/>-->
+<!--    <item-->
+<!--        android:id="@+id/model_toggle_blending"-->
+<!--        android:icon="@android:drawable/ic_menu_gallery"-->
+<!--        android:orderInCategory="800"-->
+<!--        app:showAsAction="ifRoom"-->
+<!--        android:title="Toggle X-Ray" />-->
+<!--    <item-->
+<!--        android:id="@+id/model_toggle_boundingbox"-->
+<!--        android:icon="@android:drawable/ic_menu_crop"-->
+<!--        android:orderInCategory="900"-->
+<!--        app:showAsAction="ifRoom"-->
+<!--        android:title="@string/toggle_boundingbox"/>-->
+<!--    <item-->
+<!--        android:id="@+id/model_toggle_collision"-->
+<!--        android:icon="@android:drawable/ic_menu_gallery"-->
+<!--        android:orderInCategory="950"-->
+<!--        app:showAsAction="ifRoom"-->
+<!--        android:title="Toggle Collision"/>-->
+    <item
+        android:id="@+id/model_toggle_immersive"
+        android:icon="@android:drawable/ic_menu_gallery"
+        android:orderInCategory="1000"
+        app:showAsAction="ifRoom"
+        android:title="Toggle Immersive"/>
+
+    <item
+        android:id="@+id/model_review"
+        android:icon="@drawable/ic_baseline_rate_review_24"
+        android:title="@string/review"
+        app:showAsAction="never" />
+    <!--
+    <item
+        android:id="@+id/action_settings"
+        android:icon="@android:drawable/ic_menu_preferences"
+        android:orderInCategory="500"
+        android:showAsAction="ifRoom"
+        android:title="@string/action_settings"/>
+
+
+    -->
+
+</menu>

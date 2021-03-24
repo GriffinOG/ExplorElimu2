@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "188489557754",
+    "firebase_url": "https://explorelimu-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "explorelimu",
+    "storage_bucket": "explorelimu.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:188489557754:android:bd272d60ba4c60b4314b43",
+        "android_client_info": {
+          "package_name": "com.example.render"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "188489557754-p1cpjoag1sabp0ossgm71l9oeivauusc.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCDbBhBnlCgpdETFb9yxErbSN7rZTh5Z9Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "188489557754-p1cpjoag1sabp0ossgm71l9oeivauusc.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
