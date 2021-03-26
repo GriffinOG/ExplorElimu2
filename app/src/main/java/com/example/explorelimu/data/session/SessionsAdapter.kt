@@ -9,6 +9,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.explorelimu.R
 import com.example.explorelimu.util.downloadModel
+import com.example.explorelimu.util.downloadModelToSession
 
 class SessionsAdapter(private val context: Context): RecyclerView.Adapter<SessionsAdapter.SessionViewHolder>() {
 
@@ -22,7 +23,7 @@ class SessionsAdapter(private val context: Context): RecyclerView.Adapter<Sessio
     override fun onBindViewHolder(holder: SessionViewHolder, position: Int) {
         val session = sessionsList[position]
         holder.bindSession(session)
-        holder.joinButton.setOnClickListener { downloadModel(context, session.modelFile, session.modelId) }
+        holder.joinButton.setOnClickListener { downloadModelToSession(context, session.modelFile, session) }
     }
 
     override fun getItemCount(): Int {

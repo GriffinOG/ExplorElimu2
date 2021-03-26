@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.graphics.ColorFilter;
 import android.net.Uri;
 import android.os.Build;
@@ -25,7 +26,12 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.Observer;
+import androidx.lifecycle.ViewModelProvider;
+import androidx.preference.PreferenceManager;
 
+import com.example.explorelimu.data.session.Session;
+import com.example.explorelimu.xmpp.RoosterConnection;
 import com.example.explorelimu.xmpp.RoosterConnectionService;
 import com.example.render.AddModelActivity;
 import com.example.render.R;
@@ -40,6 +46,8 @@ import com.google.firebase.storage.UploadTask;
 import org.andresoviedo.android_3d_model_engine.camera.CameraController;
 import org.andresoviedo.android_3d_model_engine.collision.CollisionController;
 import org.andresoviedo.android_3d_model_engine.controller.TouchController;
+import org.andresoviedo.android_3d_model_engine.inclass.SceneRepository;
+import org.andresoviedo.android_3d_model_engine.inclass.SceneViewModel;
 import org.andresoviedo.android_3d_model_engine.model.Object3DData;
 import org.andresoviedo.android_3d_model_engine.services.LoaderTask;
 import org.andresoviedo.android_3d_model_engine.services.SceneLoader;
@@ -47,12 +55,31 @@ import org.andresoviedo.android_3d_model_engine.view.ModelRenderer;
 import org.andresoviedo.android_3d_model_engine.view.ModelSurfaceView;
 import org.andresoviedo.util.android.ContentUtils;
 import org.andresoviedo.util.event.EventListener;
+import org.jivesoftware.smack.MessageListener;
+import org.jivesoftware.smack.packet.Message;
+import org.jivesoftware.smack.tcp.XMPPTCPConnection;
+import org.jivesoftware.smackx.muc.MultiUserChat;
+import org.jivesoftware.smackx.muc.MultiUserChatManager;
+import org.jxmpp.jid.impl.JidCreate;
+import org.jxmpp.stringprep.XmppStringprepException;
 
 import java.io.IOException;
 import java.net.URI;
 import java.util.EventObject;
 import java.util.List;
 import java.util.Map;
+
+import static com.example.explorelimu.util.HelperKt.MOVE;
+import static com.example.explorelimu.util.HelperKt.MOVE_INTENT;
+import static com.example.explorelimu.util.HelperKt.RCVD_COORD;
+import static com.example.explorelimu.util.HelperKt.RCVD_X;
+import static com.example.explorelimu.util.HelperKt.RCVD_Y;
+import static com.example.explorelimu.util.HelperKt.SESSION;
+import static com.example.explorelimu.util.HelperKt.STUDENT;
+import static com.example.explorelimu.util.HelperKt.TEACHER;
+import static com.example.explorelimu.util.HelperKt.USER_TYPE;
+import static com.example.explorelimu.util.HelperKt.X_ORDINATE;
+import static com.example.explorelimu.util.HelperKt.Y_ORDINATE;
 
 /**
  * This activity represents the container for our 3D viewer.
@@ -98,30 +125,29 @@ public class ModelActivity extends AppCompatActivity implements EventListener {
     private int modelId;
 
     private ServiceConnection serviceConnection;
+    private RoosterConnectionService boundService;
+    private boolean isBound = false;
+    private XMPPTCPConnection xmpptcpConnection;
+    private RoosterConnection roosterConnection;
 
     private BroadcastReceiver sessionBroadcastReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-
+            sceneViewModel.updateCameraPos(intent.getFloatExtra(RCVD_X, 0.0f), intent.getFloatExtra(RCVD_Y, 0.0f));
+            Log.d(getClass().getName() + " received broadcast", RCVD_X + "," + RCVD_Y);
         }
     };
+
+    private SceneRepository sceneRepository;
+    private SceneViewModel sceneViewModel;
+
+    private String userType;
+    private Session session;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         Log.i("ModelActivity", "Loading activity...");
         super.onCreate(savedInstanceState);
-
-        serviceConnection = new ServiceConnection() {
-            @Override
-            public void onServiceConnected(ComponentName name, IBinder service) {
-                Log.d(getLocalClassName(), "Service connected");
-            }
-
-            @Override
-            public void onServiceDisconnected(ComponentName name) {
-
-            }
-        };
 
         // Try to get input parameters
         Bundle b = getIntent().getExtras();
@@ -134,6 +160,9 @@ public class ModelActivity extends AppCompatActivity implements EventListener {
                 this.paramType = b.getString("type") != null ? Integer.parseInt(b.getString("type")) : -1;
                 this.immersiveMode = "true".equalsIgnoreCase(b.getString("immersiveMode"));
                 this.modelId = b.getInt("model_id");
+                if (b.getParcelable(SESSION) != null) {
+                    this.session = b.getParcelable(SESSION);
+                }
 
                 if (b.getString("backgroundColor") != null) {
                     String[] backgroundColors = b.getString("backgroundColor").split(" ");
@@ -147,6 +176,96 @@ public class ModelActivity extends AppCompatActivity implements EventListener {
             }
 
         }
+
+        userType = PreferenceManager.getDefaultSharedPreferences(this).getString(USER_TYPE, STUDENT);
+        if (session != null) {
+            sceneRepository = new SceneRepository(this).getInstance();
+            sceneViewModel = new ViewModelProvider(this, SceneViewModel.Companion.getFACTORY().invoke(sceneRepository)).get(SceneViewModel.class);
+
+            sceneViewModel.get_cameraPos().observe(this, new Observer<Float[]>() {
+                @Override
+                public void onChanged(Float[] floats) {
+                    if (userType!= null && userType.equals(TEACHER)){
+                        Intent intent = new Intent(MOVE_INTENT);
+                        intent.putExtra(SESSION, session.component1());
+                        intent.putExtra(X_ORDINATE, floats[0]);
+                        intent.putExtra(Y_ORDINATE, floats[1]);
+                        sendBroadcast(intent);
+                    } else{
+                        cameraController.translateCamera(floats[0], floats[1]);
+                    }
+                }
+            });
+
+            sceneViewModel.get_cameraZoom().observe(this, new Observer<Float>() {
+                @Override
+                public void onChanged(Float aFloat) {
+
+                }
+            });
+
+            sceneViewModel.get_objId().observe(this, new Observer<Integer>() {
+                @Override
+                public void onChanged(Integer integer) {
+                    if (userType.equals(TEACHER)){
+
+                    }
+                }
+            });
+
+            sceneViewModel.get_selectionMode().observe(this, new Observer<SceneLoader.Mode>() {
+                @Override
+                public void onChanged(SceneLoader.Mode mode) {
+                    if (userType.equals(TEACHER)){
+
+                    }
+                }
+            });
+        }
+        serviceConnection = new ServiceConnection() {
+            @Override
+            public void onServiceConnected(ComponentName name, IBinder service) {
+                Log.d(getLocalClassName(), "Service connected");
+                RoosterConnectionService.MyBinder myBinder = (RoosterConnectionService.MyBinder) service;
+                boundService = myBinder.getService();
+                isBound = true;
+
+                xmpptcpConnection = boundService.getmConnection();
+                roosterConnection = boundService.getmRoosterConnection();
+
+                if (session != null) {
+                    try {
+                        MultiUserChat multiUserChat = MultiUserChatManager
+                                .getInstanceFor(xmpptcpConnection)
+                                .getMultiUserChat(JidCreate
+                                        .entityBareFrom(session.component1() + "@"
+                                                + getResources().getString(R.string.muc_service)));
+
+                        multiUserChat.addMessageListener(new MessageListener() {
+                            @Override
+                            public void processMessage(Message message) {
+                                String msg = message.getBody();
+                                if (msg.startsWith(MOVE)){
+                                    Log.d(getClass().getName() + " msg received", msg);
+                                    float x = Float.parseFloat(msg.substring(msg.indexOf("x") + 1, msg.indexOf(",")));
+                                    float y = Float.parseFloat(msg.substring(msg.indexOf("y") + 1));
+
+                                    sceneViewModel.updateCameraPos(x, y);
+                                }
+                            }
+                        });
+
+                    } catch (XmppStringprepException e) {
+                        Log.e(getClass().getName() + "muc", e.getMessage());
+                    }
+                }
+            }
+
+            @Override
+            public void onServiceDisconnected(ComponentName name) {
+
+            }
+        };
 
         handler = new Handler(getMainLooper());
 
@@ -198,7 +317,7 @@ public class ModelActivity extends AppCompatActivity implements EventListener {
 
         try {
             Log.i("ModelActivity", "Loading CameraController...");
-            cameraController = new CameraController(scene.getCamera());
+            cameraController = new CameraController(scene.getCamera(), sceneViewModel);
             gLView.getModelRenderer().addListener(cameraController);
             touchController.addListener(cameraController);
         } catch (Exception e) {
@@ -226,7 +345,10 @@ public class ModelActivity extends AppCompatActivity implements EventListener {
         // load model
         scene.init();
 
+
+
         Log.i("ModelActivity", "Finished loading");
+
 //        setContentView(R.layout.activity_model);
 //
 //        parent = findViewById(R.id.parent_rl);
@@ -561,7 +683,7 @@ public class ModelActivity extends AppCompatActivity implements EventListener {
     @Override
     protected void onStart() {
         super.onStart();
-        Intent intent = new Intent(this, RoosterConnectionService.class);
+        Intent intent = new Intent(getApplicationContext(), RoosterConnectionService.class);
         bindService(intent, serviceConnection, BIND_AUTO_CREATE);
 
         Intent broadcastIntent = new Intent("com.myapp.main.TEST_INTENT");
@@ -573,7 +695,7 @@ public class ModelActivity extends AppCompatActivity implements EventListener {
     @Override
     protected void onResume() {
         super.onResume();
-        registerReceiver(sessionBroadcastReceiver, new IntentFilter());
+        registerReceiver(sessionBroadcastReceiver, new IntentFilter(RCVD_COORD));
     }
 
     @Override

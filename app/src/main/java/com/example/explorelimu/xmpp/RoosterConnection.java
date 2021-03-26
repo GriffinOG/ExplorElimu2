@@ -61,6 +61,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.example.explorelimu.util.HelperKt.MOVE;
+import static com.example.explorelimu.util.HelperKt.MOVE_INTENT;
+import static com.example.explorelimu.util.HelperKt.PINCH_INTENT;
+import static com.example.explorelimu.util.HelperKt.RCVD_COORD;
+import static com.example.explorelimu.util.HelperKt.RCVD_X;
+import static com.example.explorelimu.util.HelperKt.RCVD_Y;
+import static com.example.explorelimu.util.HelperKt.SESSION;
+import static com.example.explorelimu.util.HelperKt.X_ORDINATE;
+import static com.example.explorelimu.util.HelperKt.Y_ORDINATE;
+
 public class RoosterConnection implements ConnectionListener {
 
     private static final String TAG = "RoosterConnection";
@@ -74,7 +84,7 @@ public class RoosterConnection implements ConnectionListener {
     private  final String mServiceName = "griffin.chatdiary.com";
     private XMPPTCPConnection mConnection;
 
-    private MessageReceiver chatMessageReceiver;//Receives messages from the ui thread.
+    private BroadcastReceiver chatMessageReceiver;//Receives messages from the ui thread.
 
     private DomainBareJid xmppServiceDomain;
     private InetAddress localIp;
@@ -312,21 +322,7 @@ public class RoosterConnection implements ConnectionListener {
                     contactJid=from;
                 }
 
-//                if (message.getBody(image) != null) {
-//                    rmMessage = new MessageBuilder().vitalFields(contactJid, com.example.chatdiary.chat.Message.Type.IMAGE,
-//                            message.getBody(image), new Date()).setMyCaption(message.getBody()).build();
-//                } else if (message.getBody("file") != null) {
-//                    rmMessage = new MessageBuilder().vitalFields(contactJid, com.example.chatdiary.chat.Message.Type.FILE,
-//                            message.getBody(file), new Date()).setMyCaption(message.getBody()).build();
-//                } else
-//                    rmMessage = new MessageBuilder().vitalFields(contactJid, com.example.chatdiary.chat.Message.Type.TEXT,
-//                        message.getBody(), new Date()).build();
 
-                //Bundle up the intent and send the broadcast.
-//                Intent intent = new Intent(RoosterConnectionService.NEW_MESSAGE);
-//                intent.setPackage(mApplicationContext.getPackageName());
-//                intent.putExtra(RoosterConnectionService.BUNDLE_MESSAGE_OBJ, rmMessage);
-//                mApplicationContext.sendBroadcast(intent);
 
                 new Thread(new Runnable() {
                     @Override
@@ -341,7 +337,7 @@ public class RoosterConnection implements ConnectionListener {
             }
         });
 
-        MultiUserChatManager multiUserChatManager = MultiUserChatManager.getInstanceFor(mConnection);
+        multiUserChatManager = MultiUserChatManager.getInstanceFor(mConnection);
         multiUserChatManager.addInvitationListener(new InvitationListener() {
             @Override
             public void invitationReceived(XMPPConnection conn, MultiUserChat room, EntityJid inviter, String reason, String password, Message message, MUCUser.Invite invitation) {
@@ -529,9 +525,27 @@ public class RoosterConnection implements ConnectionListener {
 //            }
 //        };
 
-        chatMessageReceiver = new MessageReceiver();
+        chatMessageReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if (intent.getAction().equals(MOVE_INTENT)){
+                    try {
+                        MultiUserChat currentMuc = multiUserChatManager.getMultiUserChat(JidCreate
+                                .entityBareFrom(intent.getStringExtra(SESSION) + "@" + context.getResources().getString(R.string.muc_service)));
+                        currentMuc.sendMessage(MOVE + ":x" + intent.getFloatExtra(X_ORDINATE, 0.0f)
+                                + ",y" + intent.getFloatExtra(Y_ORDINATE, 0.0f));
+                    } catch (XmppStringprepException e) {
+                        Log.e(getClass().getName() + " createMuc", e.getMessage());
+                    } catch (SmackException.NotConnectedException | InterruptedException e) {
+                        Log.e(getClass().getName() + " sendMsg", e.getMessage());
+                    }
+                }
+            }
+        };
+
         IntentFilter filter = new IntentFilter();
-        filter.addAction(RoosterConnectionService.SEND_MESSAGE);
+        filter.addAction(MOVE_INTENT);
+        filter.addAction(PINCH_INTENT);
         mApplicationContext.registerReceiver(chatMessageReceiver,filter);
 
 //        statusReceiver = new BroadcastReceiver() {

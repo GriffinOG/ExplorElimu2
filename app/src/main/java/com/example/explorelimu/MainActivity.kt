@@ -21,6 +21,7 @@ import androidx.navigation.ui.setupWithNavController
 import com.example.explorelimu.render.ModelActivity
 import com.example.explorelimu.ui.members.MembersFragment
 import com.example.explorelimu.util.USER_TYPE
+import com.example.explorelimu.util.launchModelRendererActivity
 import com.example.explorelimu.xmpp.RoosterConnection
 import com.example.explorelimu.xmpp.RoosterConnectionService
 import com.google.android.material.bottomnavigation.BottomNavigationView
@@ -64,8 +65,11 @@ class MainActivity : AppCompatActivity() {
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        System.setProperty("java.protocol.handler.pkgs", "org.andresoviedo.util.android")
-        URL.setURLStreamHandlerFactory(AndroidURLStreamHandlerFactory())
+
+        if(System.getProperty("java.protocol.handler.pkgs") == null){
+            System.setProperty("java.protocol.handler.pkgs", "org.andresoviedo.util.android")
+            URL.setURLStreamHandlerFactory(AndroidURLStreamHandlerFactory())
+        }
 
         setContentView(R.layout.activity_main)
 
@@ -161,35 +165,9 @@ class MainActivity : AppCompatActivity() {
                 if (file != null) {
                     ContentUtils.setCurrentDir(file.parentFile)
                     Log.d("$localClassName uri", file.absolutePath)
-                    launchModelRendererActivity(Uri.parse("file://" + file.absolutePath))
+                    launchModelRendererActivity(this, Uri.parse("file://" + file.absolutePath),)
                 }
             }
         }
-    }
-
-    fun launchModelRendererActivity(uri: Uri) {
-        Log.i("Menu", "Launching renderer for '$uri'")
-        val intent = Intent(applicationContext, ModelActivity::class.java)
-        try {
-            URI.create(uri.toString())
-            intent.putExtra("uri", uri.toString())
-        } catch (e: Exception) {
-            // info: filesystem url may contain spaces, therefore we re-encode URI
-            try {
-                intent.putExtra("uri", URI(uri.scheme, uri.authority, uri.path, uri.query, uri.fragment).toString())
-            } catch (ex: URISyntaxException) {
-                Toast.makeText(this, "Error: $uri", Toast.LENGTH_LONG).show()
-                return
-            }
-        }
-        intent.putExtra("immersiveMode", "false")
-
-        // content provider case
-//        if (loadModelParameters.isNotEmpty()) {
-//            intent.putExtra("type", loadModelParameters["type"].toString())
-//            //intent.putExtra("backgroundColor", "0.25 0.25 0.25 1");
-//            loadModelParameters
-//        }
-        startActivity(intent)
     }
 }

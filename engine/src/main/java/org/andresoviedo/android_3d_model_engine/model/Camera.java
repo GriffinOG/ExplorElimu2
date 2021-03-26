@@ -477,4 +477,16 @@ public class Camera {
         return pos[2];
     }
 
+    public void setxPos(float xPos) {
+        pos[0] = xPos;
+    }
+
+    public void setyPos(float yPos) {
+        pos[1] = yPos;
+    }
+
+    public void setzPos(float zPos) {
+        pos[2] = zPos;
+    }
+
 }
