@@ -1,10 +1,16 @@
 package com.example.explorelimu.util
 
+import android.app.Activity
 import android.app.ProgressDialog
 import android.content.Context
 import android.content.Intent
+import android.graphics.Insets
 import android.net.Uri
+import android.os.Build
+import android.util.DisplayMetrics
 import android.util.Log
+import android.view.WindowInsets
+import android.view.WindowMetrics
 import android.widget.Toast
 import com.android.volley.Response
 import com.android.volley.toolbox.StringRequest
@@ -23,6 +29,7 @@ import java.net.URI
 import java.net.URISyntaxException
 import java.util.*
 
+
 const val USER_TYPE = "user_type"
 const val STUDENT = "student"
 const val TEACHER = "educator"
@@ -31,10 +38,9 @@ const val PINCH_INTENT = "pinch event"
 const val SESSION = "session"
 const val X_ORDINATE = "x"
 const val Y_ORDINATE = "y"
+const val ZOOM = "z"
 const val MOVE = "MOVE"
 const val RCVD_COORD = "received coordinates"
-const val RCVD_X = "received x"
-const val RCVD_Y = "received y"
 
 
 fun getFirebaseFileRef(fileName: String): StorageReference{
@@ -218,3 +224,30 @@ fun incrementViews(context: Context, fileName: String) {
     // Adding the StringRequest object into requestQueue.
     requestQueue.add(stringRequest)
 }
+
+fun getScreenWidth(activity: Activity): Int {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        val windowMetrics: WindowMetrics = activity.windowManager.currentWindowMetrics
+        val insets: Insets = windowMetrics.windowInsets
+                .getInsetsIgnoringVisibility(WindowInsets.Type.systemBars())
+        windowMetrics.bounds.width() - insets.left - insets.right
+    } else {
+        val displayMetrics = DisplayMetrics()
+        activity.windowManager.defaultDisplay.getMetrics(displayMetrics)
+        displayMetrics.widthPixels
+    }
+}
+
+fun getScreenHeight(activity: Activity): Int {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        val windowMetrics: WindowMetrics = activity.windowManager.currentWindowMetrics
+        val insets: Insets = windowMetrics.windowInsets
+                .getInsetsIgnoringVisibility(WindowInsets.Type.systemBars())
+        windowMetrics.bounds.height() - insets.bottom - insets.top
+    } else {
+        val displayMetrics = DisplayMetrics()
+        activity.windowManager.defaultDisplay.getMetrics(displayMetrics)
+        displayMetrics.heightPixels
+    }
+}
+

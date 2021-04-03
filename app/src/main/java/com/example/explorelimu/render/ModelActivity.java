@@ -2,13 +2,9 @@ package com.example.explorelimu.render;
 
 import android.annotation.TargetApi;
 import android.app.ProgressDialog;
-import android.content.BroadcastReceiver;
 import android.content.ComponentName;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.ServiceConnection;
-import android.content.SharedPreferences;
 import android.graphics.ColorFilter;
 import android.net.Uri;
 import android.os.Build;
@@ -71,15 +67,15 @@ import java.util.Map;
 
 import static com.example.explorelimu.util.HelperKt.MOVE;
 import static com.example.explorelimu.util.HelperKt.MOVE_INTENT;
-import static com.example.explorelimu.util.HelperKt.RCVD_COORD;
-import static com.example.explorelimu.util.HelperKt.RCVD_X;
-import static com.example.explorelimu.util.HelperKt.RCVD_Y;
 import static com.example.explorelimu.util.HelperKt.SESSION;
 import static com.example.explorelimu.util.HelperKt.STUDENT;
 import static com.example.explorelimu.util.HelperKt.TEACHER;
 import static com.example.explorelimu.util.HelperKt.USER_TYPE;
 import static com.example.explorelimu.util.HelperKt.X_ORDINATE;
 import static com.example.explorelimu.util.HelperKt.Y_ORDINATE;
+import static com.example.explorelimu.util.HelperKt.ZOOM;
+import static com.example.explorelimu.util.HelperKt.getScreenHeight;
+import static com.example.explorelimu.util.HelperKt.getScreenWidth;
 
 /**
  * This activity represents the container for our 3D viewer.
@@ -130,13 +126,13 @@ public class ModelActivity extends AppCompatActivity implements EventListener {
     private XMPPTCPConnection xmpptcpConnection;
     private RoosterConnection roosterConnection;
 
-    private BroadcastReceiver sessionBroadcastReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            sceneViewModel.updateCameraPos(intent.getFloatExtra(RCVD_X, 0.0f), intent.getFloatExtra(RCVD_Y, 0.0f));
-            Log.d(getClass().getName() + " received broadcast", RCVD_X + "," + RCVD_Y);
-        }
-    };
+//    private BroadcastReceiver sessionBroadcastReceiver = new BroadcastReceiver() {
+//        @Override
+//        public void onReceive(Context context, Intent intent) {
+//            sceneViewModel.updateCameraPos((float) (intent.getDoubleExtra(RCVD_X, 0.0f)*screenWidth), (float) (intent.getDoubleExtra(RCVD_Y, 0.0f)*screenHeight));
+//            Log.d(getClass().getName() + " received broadcast", RCVD_X + "," + RCVD_Y);
+//        }
+//    };
 
     private SceneRepository sceneRepository;
     private SceneViewModel sceneViewModel;
@@ -144,10 +140,18 @@ public class ModelActivity extends AppCompatActivity implements EventListener {
     private String userType;
     private Session session;
 
+    private int screenWidth, screenHeight;
+
+    private float xFactor = 100000f, yFactor = 100f;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         Log.i("ModelActivity", "Loading activity...");
         super.onCreate(savedInstanceState);
+
+        screenWidth = getScreenWidth(this);
+        screenHeight = getScreenHeight(this);
+        Log.d(getLocalClassName(),"width:"+screenWidth+", height:"+screenHeight);
 
         // Try to get input parameters
         Bundle b = getIntent().getExtras();
@@ -179,48 +183,7 @@ public class ModelActivity extends AppCompatActivity implements EventListener {
 
         userType = PreferenceManager.getDefaultSharedPreferences(this).getString(USER_TYPE, STUDENT);
         if (session != null) {
-            sceneRepository = new SceneRepository(this).getInstance();
-            sceneViewModel = new ViewModelProvider(this, SceneViewModel.Companion.getFACTORY().invoke(sceneRepository)).get(SceneViewModel.class);
-
-            sceneViewModel.get_cameraPos().observe(this, new Observer<Float[]>() {
-                @Override
-                public void onChanged(Float[] floats) {
-                    if (userType!= null && userType.equals(TEACHER)){
-                        Intent intent = new Intent(MOVE_INTENT);
-                        intent.putExtra(SESSION, session.component1());
-                        intent.putExtra(X_ORDINATE, floats[0]);
-                        intent.putExtra(Y_ORDINATE, floats[1]);
-                        sendBroadcast(intent);
-                    } else{
-                        cameraController.translateCamera(floats[0], floats[1]);
-                    }
-                }
-            });
-
-            sceneViewModel.get_cameraZoom().observe(this, new Observer<Float>() {
-                @Override
-                public void onChanged(Float aFloat) {
-
-                }
-            });
-
-            sceneViewModel.get_objId().observe(this, new Observer<Integer>() {
-                @Override
-                public void onChanged(Integer integer) {
-                    if (userType.equals(TEACHER)){
-
-                    }
-                }
-            });
-
-            sceneViewModel.get_selectionMode().observe(this, new Observer<SceneLoader.Mode>() {
-                @Override
-                public void onChanged(SceneLoader.Mode mode) {
-                    if (userType.equals(TEACHER)){
-
-                    }
-                }
-            });
+            listenForChanges();
         }
         serviceConnection = new ServiceConnection() {
             @Override
@@ -247,10 +210,14 @@ public class ModelActivity extends AppCompatActivity implements EventListener {
                                 String msg = message.getBody();
                                 if (msg.startsWith(MOVE)){
                                     Log.d(getClass().getName() + " msg received", msg);
-                                    float x = Float.parseFloat(msg.substring(msg.indexOf("x") + 1, msg.indexOf(",")));
-                                    float y = Float.parseFloat(msg.substring(msg.indexOf("y") + 1));
+                                    double x = Float.parseFloat(msg.substring(msg.indexOf("x") + 1, msg.indexOf(",")));
+                                    double y = Float.parseFloat(msg.substring(msg.indexOf("y") + 1));
 
-                                    sceneViewModel.updateCameraPos(x, y);
+                                    if (userType.equals(STUDENT)){
+                                        x = (x/xFactor)*screenWidth;
+                                        y = (y/yFactor)*screenHeight;
+                                        sceneViewModel.updateCameraPos((float) x, (float) y);
+                                    }
                                 }
                             }
                         });
@@ -695,12 +662,68 @@ public class ModelActivity extends AppCompatActivity implements EventListener {
     @Override
     protected void onResume() {
         super.onResume();
-        registerReceiver(sessionBroadcastReceiver, new IntentFilter(RCVD_COORD));
+//        registerReceiver(sessionBroadcastReceiver, new IntentFilter(RCVD_COORD));
     }
 
     @Override
     protected void onStop() {
         super.onStop();
         unbindService(serviceConnection);
+    }
+
+    private void listenForChanges(){
+        sceneRepository = new SceneRepository(this).getInstance();
+        sceneViewModel = new ViewModelProvider(this, SceneViewModel.Companion.getFACTORY().invoke(sceneRepository)).get(SceneViewModel.class);
+
+        sceneViewModel.get_cameraPos().observe(this, new Observer<Float[]>() {
+            @Override
+            public void onChanged(Float[] floats) {
+                if (userType!= null && userType.equals(TEACHER)){
+                    Intent intent = new Intent(MOVE_INTENT);
+                    intent.putExtra(SESSION, session.component1());
+
+                    float xOrdinate = xFactor*(floats[0]/screenWidth);
+                    intent.putExtra(X_ORDINATE, xOrdinate);
+
+                    float yOrdinate = yFactor*(floats[1]/screenHeight);
+                    intent.putExtra(Y_ORDINATE, yOrdinate);
+
+                    sendBroadcast(intent);
+                }
+            }
+        });
+
+        sceneViewModel.get_cameraZoom().observe(this, new Observer<Float>() {
+            @Override
+            public void onChanged(Float aFloat) {
+                if (userType != null && userType.equals(TEACHER)){
+                    Intent intent = new Intent(MOVE_INTENT);
+                    intent.putExtra(SESSION, session.component1());
+
+                    float zoom = aFloat;
+                    intent.putExtra(ZOOM, aFloat);
+
+                    sendBroadcast(intent);
+                }
+            }
+        });
+
+        sceneViewModel.get_objId().observe(this, new Observer<Integer>() {
+            @Override
+            public void onChanged(Integer integer) {
+                if (userType.equals(TEACHER)){
+
+                }
+            }
+        });
+
+        sceneViewModel.get_selectionMode().observe(this, new Observer<SceneLoader.Mode>() {
+            @Override
+            public void onChanged(SceneLoader.Mode mode) {
+                if (userType.equals(TEACHER)){
+
+                }
+            }
+        });
     }
 }
