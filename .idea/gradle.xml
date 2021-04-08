@@ -14,6 +14,7 @@
             <option value="$PROJECT_DIR$/app" />
             <option value="$PROJECT_DIR$/engine" />
             <option value="$PROJECT_DIR$/render" />
+            <option value="$PROJECT_DIR$/twilio" />
           </set>
         </option>
         <option name="resolveModulePerSourceSet" value="false" />

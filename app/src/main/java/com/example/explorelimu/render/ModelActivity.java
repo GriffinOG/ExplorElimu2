@@ -1,11 +1,16 @@
 package com.example.explorelimu.render;
 
+import android.Manifest;
+import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.ProgressDialog;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.ColorFilter;
+import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -22,10 +27,13 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.preference.PreferenceManager;
 
+import com.example.explorelimu.BuildConfig;
 import com.example.explorelimu.data.session.Session;
 import com.example.explorelimu.xmpp.RoosterConnection;
 import com.example.explorelimu.xmpp.RoosterConnectionService;
@@ -35,15 +43,41 @@ import com.example.render.ReviewActivity;
 import com.example.render.demo.DemoLoaderTask;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
+import com.koushikdutta.ion.Ion;
+import com.twilio.audioswitch.AudioDevice;
+import com.twilio.audioswitch.AudioSwitch;
+import com.twilio.video.AudioCodec;
+import com.twilio.video.ConnectOptions;
+import com.twilio.video.EncodingParameters;
+import com.twilio.video.G722Codec;
+import com.twilio.video.IsacCodec;
+import com.twilio.video.LocalAudioTrack;
+import com.twilio.video.LocalParticipant;
+import com.twilio.video.LocalVideoTrack;
+import com.twilio.video.OpusCodec;
+import com.twilio.video.PcmaCodec;
+import com.twilio.video.PcmuCodec;
+import com.twilio.video.RemoteAudioTrack;
+import com.twilio.video.RemoteAudioTrackPublication;
+import com.twilio.video.RemoteDataTrack;
+import com.twilio.video.RemoteDataTrackPublication;
+import com.twilio.video.RemoteParticipant;
+import com.twilio.video.RemoteVideoTrack;
+import com.twilio.video.RemoteVideoTrackPublication;
+import com.twilio.video.Room;
+import com.twilio.video.TwilioException;
+import com.twilio.video.Video;
+import com.twilio.video.VideoTrack;
 
 import org.andresoviedo.android_3d_model_engine.camera.CameraController;
 import org.andresoviedo.android_3d_model_engine.collision.CollisionController;
 import org.andresoviedo.android_3d_model_engine.controller.TouchController;
-import org.andresoviedo.android_3d_model_engine.inclass.SceneRepository;
-import org.andresoviedo.android_3d_model_engine.inclass.SceneViewModel;
+import org.andresoviedo.android_3d_model_engine.inclass.data.SceneRepository;
+import org.andresoviedo.android_3d_model_engine.inclass.ui.SceneViewModel;
 import org.andresoviedo.android_3d_model_engine.model.Object3DData;
 import org.andresoviedo.android_3d_model_engine.services.LoaderTask;
 import org.andresoviedo.android_3d_model_engine.services.SceneLoader;
@@ -61,19 +95,37 @@ import org.jxmpp.stringprep.XmppStringprepException;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.Collections;
 import java.util.EventObject;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+
+import kotlin.Unit;
 
 import static com.example.explorelimu.util.HelperKt.MOVE;
 import static com.example.explorelimu.util.HelperKt.MOVE_INTENT;
+import static com.example.explorelimu.util.HelperKt.PINCH;
+import static com.example.explorelimu.util.HelperKt.PINCH_INTENT;
+import static com.example.explorelimu.util.HelperKt.PREF_AUDIO_CODEC;
+import static com.example.explorelimu.util.HelperKt.PREF_AUDIO_CODEC_DEFAULT;
+import static com.example.explorelimu.util.HelperKt.PREF_ENABLE_AUTOMATIC_SUBSCRIPTION;
+import static com.example.explorelimu.util.HelperKt.PREF_ENABLE_AUTOMATIC_SUBSCRIPTION_DEFAULT;
+import static com.example.explorelimu.util.HelperKt.PREF_SENDER_MAX_AUDIO_BITRATE;
+import static com.example.explorelimu.util.HelperKt.PREF_SENDER_MAX_AUDIO_BITRATE_DEFAULT;
+import static com.example.explorelimu.util.HelperKt.PREF_SENDER_MAX_VIDEO_BITRATE;
+import static com.example.explorelimu.util.HelperKt.PREF_SENDER_MAX_VIDEO_BITRATE_DEFAULT;
+import static com.example.explorelimu.util.HelperKt.SELECTION;
+import static com.example.explorelimu.util.HelperKt.SELECTION_MODE;
+import static com.example.explorelimu.util.HelperKt.SELECTION_MODE_INTENT;
 import static com.example.explorelimu.util.HelperKt.SESSION;
 import static com.example.explorelimu.util.HelperKt.STUDENT;
 import static com.example.explorelimu.util.HelperKt.TEACHER;
+import static com.example.explorelimu.util.HelperKt.UPDATE_SELECTION_INTENT;
 import static com.example.explorelimu.util.HelperKt.USER_TYPE;
-import static com.example.explorelimu.util.HelperKt.X_ORDINATE;
-import static com.example.explorelimu.util.HelperKt.Y_ORDINATE;
-import static com.example.explorelimu.util.HelperKt.ZOOM;
+import static com.example.explorelimu.util.HelperKt.X_DIFF;
+import static com.example.explorelimu.util.HelperKt.Y_DIFF;
+import static com.example.explorelimu.util.HelperKt.Z_DIFF;
 import static com.example.explorelimu.util.HelperKt.getScreenHeight;
 import static com.example.explorelimu.util.HelperKt.getScreenWidth;
 
@@ -83,6 +135,7 @@ import static com.example.explorelimu.util.HelperKt.getScreenWidth;
  * @author andresoviedo
  */
 public class ModelActivity extends AppCompatActivity implements EventListener {
+    private static final int MIC_PERMISSION_REQUEST_CODE = 1;
 
     private static final int REQUEST_CODE_LOAD_TEXTURE = 1000;
     private static final int FULLSCREEN_DELAY = 10000;
@@ -144,10 +197,84 @@ public class ModelActivity extends AppCompatActivity implements EventListener {
 
     private float xFactor = 100000f, yFactor = 100f;
 
+    private static final String LOCAL_AUDIO_TRACK_NAME = "mic";
+
+    /*
+     * You must provide a Twilio Access Token to connect to the Video service
+     */
+    private static final String TWILIO_ACCESS_TOKEN = BuildConfig.TWILIO_ACCESS_TOKEN;
+    private static final String ACCESS_TOKEN_SERVER = BuildConfig.TWILIO_ACCESS_TOKEN_SERVER;
+
+    /*
+     * Access token used to connect. This field will be set either from the console generated token
+     * or the request to the token server.
+     */
+    private String accessToken;
+
+    /*
+     * A Room represents communication between a local participant and one or more participants.
+     */
+    private Room room;
+    private LocalParticipant localParticipant;
+
+    /*
+     * AudioCodec represents the preferred codec for encoding and decoding audio.
+     */
+    private AudioCodec audioCodec;
+
+    /*
+     * Encoding parameters represent the sender side bandwidth constraints.
+     */
+    private EncodingParameters encodingParameters;
+
+    /*
+     * Audio management
+     */
+    private AudioSwitch audioSwitch;
+    private int savedVolumeControlStream;
+
+    /*
+     * Android shared preferences used for settings
+     */
+    private SharedPreferences preferences;
+
+    private LocalAudioTrack localAudioTrack;
+
+    private boolean disconnectedFromOnDestroy;
+    private boolean enableAutomaticSubscription;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         Log.i("ModelActivity", "Loading activity...");
         super.onCreate(savedInstanceState);
+
+        /*
+         * Get shared preferences to read settings
+         */
+        preferences = android.preference.PreferenceManager.getDefaultSharedPreferences(this);
+
+        /*
+         * Setup audio management and set the volume control stream
+         */
+        audioSwitch = new AudioSwitch(getApplicationContext());
+        savedVolumeControlStream = getVolumeControlStream();
+        setVolumeControlStream(AudioManager.STREAM_VOICE_CALL);
+
+        /*
+         * Check camera and microphone permissions. Needed in Android M.
+         */
+        if (!checkPermissionForCameraAndMicrophone()) {
+            requestPermissionForCameraAndMicrophone();
+        } else {
+            createAudioAndVideoTracks();
+            setAccessToken();
+        }
+
+        audioSwitch.start((audioDevices, audioDevice) -> {
+//            updateAudioDeviceIcon(audioDevice);
+
+            return Unit.INSTANCE;
+        });
 
         screenWidth = getScreenWidth(this);
         screenHeight = getScreenHeight(this);
@@ -181,6 +308,9 @@ public class ModelActivity extends AppCompatActivity implements EventListener {
 
         }
 
+        sceneRepository = new SceneRepository(this).getInstance();
+        sceneViewModel = new ViewModelProvider(this, SceneViewModel.Companion.getFACTORY().invoke(sceneRepository)).get(SceneViewModel.class);
+
         userType = PreferenceManager.getDefaultSharedPreferences(this).getString(USER_TYPE, STUDENT);
         if (session != null) {
             listenForChanges();
@@ -208,8 +338,9 @@ public class ModelActivity extends AppCompatActivity implements EventListener {
                             @Override
                             public void processMessage(Message message) {
                                 String msg = message.getBody();
+                                Log.d(getClass().getName() + " msg received", msg);
+
                                 if (msg.startsWith(MOVE)){
-                                    Log.d(getClass().getName() + " msg received", msg);
                                     double x = Float.parseFloat(msg.substring(msg.indexOf("x") + 1, msg.indexOf(",")));
                                     double y = Float.parseFloat(msg.substring(msg.indexOf("y") + 1));
 
@@ -218,6 +349,15 @@ public class ModelActivity extends AppCompatActivity implements EventListener {
                                         y = (y/yFactor)*screenHeight;
                                         sceneViewModel.updateCameraPos((float) x, (float) y);
                                     }
+                                } else if (msg.startsWith(PINCH)){
+                                    float z = Float.parseFloat(msg.substring(msg.indexOf("z") + 1));
+                                    Log.d(getLocalClassName() + "received z", String.valueOf(z));
+                                    sceneViewModel.updateCameraZoom(z);
+                                } else if (msg.startsWith(SELECTION_MODE)){
+
+                                } else if (msg.startsWith(SELECTION)){
+                                    int selection = Integer.parseInt(msg.substring(msg.indexOf(":")));
+                                    sceneViewModel.updateObjId(selection);
                                 }
                             }
                         });
@@ -238,7 +378,7 @@ public class ModelActivity extends AppCompatActivity implements EventListener {
 
         // Create our 3D scenario
         Log.i("ModelActivity", "Loading Scene...");
-        scene = new SceneLoader(this, paramUri, paramType, gLView);
+        scene = new SceneLoader(this, paramUri, paramType, gLView, sceneViewModel);
         if (paramUri == null) {
             final LoaderTask task = new DemoLoaderTask(this, null, scene);
             task.execute();
@@ -312,9 +452,15 @@ public class ModelActivity extends AppCompatActivity implements EventListener {
         // load model
         scene.init();
 
-
-
         Log.i("ModelActivity", "Finished loading");
+
+        audioSwitch.selectDevice(audioSwitch.getAvailableAudioDevices().get(0));
+
+//        if (selectedDevice == null) {
+//            Log.e(getLocalClassName(), "No selected audio device");
+//        }
+
+
 
 //        setContentView(R.layout.activity_model);
 //
@@ -352,6 +498,11 @@ public class ModelActivity extends AppCompatActivity implements EventListener {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.model, menu);
         initial = menu.getItem(1).getIcon().getColorFilter();
+
+        /*
+         * Start the audio device selector after the menu is created and update the icon when the
+         * selected audio device changes.
+         */
 
         return true;
     }
@@ -396,6 +547,7 @@ public class ModelActivity extends AppCompatActivity implements EventListener {
             } else {
                 item.setChecked(true);
                 scene.setCurrentMode(SceneLoader.Mode.WIRE_OUT);
+                sceneViewModel.updateSelectionMode(SceneLoader.Mode.WIRE_OUT);
 //                item.getIcon().setColorFilter(Color.CYAN, PorterDuff.Mode.MULTIPLY);
             }
             return true;
@@ -406,6 +558,7 @@ public class ModelActivity extends AppCompatActivity implements EventListener {
             } else {
                 item.setChecked(true);
                 scene.setCurrentMode(SceneLoader.Mode.ISOLATE);
+                sceneViewModel.updateSelectionMode(SceneLoader.Mode.ISOLATE);
 //                item.getIcon().setColorFilter(Color.CYAN, PorterDuff.Mode.MULTIPLY);
             }
             return true;
@@ -416,6 +569,7 @@ public class ModelActivity extends AppCompatActivity implements EventListener {
             } else {
                 item.setChecked(true);
                 scene.setCurrentMode(SceneLoader.Mode.DROP);
+                sceneViewModel.updateSelectionMode(SceneLoader.Mode.DROP);
 //                item.getIcon().setColorFilter(Color.CYAN, PorterDuff.Mode.MULTIPLY);
             }
             return true;
@@ -659,10 +813,37 @@ public class ModelActivity extends AppCompatActivity implements EventListener {
         sendBroadcast(broadcastIntent);
     }
 
+    @SuppressLint("SetTextI18n")
     @Override
     protected void onResume() {
         super.onResume();
 //        registerReceiver(sessionBroadcastReceiver, new IntentFilter(RCVD_COORD));
+
+        /*
+         * Update preferred audio and video codec in case changed in settings
+         */
+        audioCodec = getAudioCodecPreference(PREF_AUDIO_CODEC,
+                PREF_AUDIO_CODEC_DEFAULT);
+        enableAutomaticSubscription = getAutomaticSubscriptionPreference(PREF_ENABLE_AUTOMATIC_SUBSCRIPTION,
+                PREF_ENABLE_AUTOMATIC_SUBSCRIPTION_DEFAULT);
+        /*
+         * Get latest encoding parameters
+         */
+        final EncodingParameters newEncodingParameters = getEncodingParameters();
+
+        /*
+         * Update encoding parameters
+         */
+        encodingParameters = newEncodingParameters;
+
+        /*
+         * Update reconnecting UI
+         */
+//        if (room != null) {
+//            reconnectingProgressBar.setVisibility((room.getState() != Room.State.RECONNECTING) ?
+//                    View.GONE :
+//                    View.VISIBLE);
+//        }
     }
 
     @Override
@@ -671,9 +852,36 @@ public class ModelActivity extends AppCompatActivity implements EventListener {
         unbindService(serviceConnection);
     }
 
+    @Override
+    protected void onDestroy() {
+        /*
+         * Tear down audio management and restore previous volume stream
+         */
+        audioSwitch.stop();
+        setVolumeControlStream(savedVolumeControlStream);
+
+        /*
+         * Always disconnect from the room before leaving the Activity to
+         * ensure any memory allocated to the Room resource is freed.
+         */
+        if (room != null && room.getState() != Room.State.DISCONNECTED) {
+            room.disconnect();
+            disconnectedFromOnDestroy = true;
+        }
+
+        /*
+         * Release the local audio and video tracks ensuring any memory allocated to audio
+         * or video is freed.
+         */
+        if (localAudioTrack != null) {
+            localAudioTrack.release();
+            localAudioTrack = null;
+        }
+
+        super.onDestroy();
+    }
+
     private void listenForChanges(){
-        sceneRepository = new SceneRepository(this).getInstance();
-        sceneViewModel = new ViewModelProvider(this, SceneViewModel.Companion.getFACTORY().invoke(sceneRepository)).get(SceneViewModel.class);
 
         sceneViewModel.get_cameraPos().observe(this, new Observer<Float[]>() {
             @Override
@@ -683,12 +891,14 @@ public class ModelActivity extends AppCompatActivity implements EventListener {
                     intent.putExtra(SESSION, session.component1());
 
                     float xOrdinate = xFactor*(floats[0]/screenWidth);
-                    intent.putExtra(X_ORDINATE, xOrdinate);
+                    intent.putExtra(X_DIFF, xOrdinate);
 
                     float yOrdinate = yFactor*(floats[1]/screenHeight);
-                    intent.putExtra(Y_ORDINATE, yOrdinate);
+                    intent.putExtra(Y_DIFF, yOrdinate);
 
                     sendBroadcast(intent);
+                } else {
+                    cameraController.translateCamera(floats[0], floats[1]);
                 }
             }
         });
@@ -697,14 +907,15 @@ public class ModelActivity extends AppCompatActivity implements EventListener {
             @Override
             public void onChanged(Float aFloat) {
                 if (userType != null && userType.equals(TEACHER)){
-                    Intent intent = new Intent(MOVE_INTENT);
+                    Intent intent = new Intent(PINCH_INTENT);
                     intent.putExtra(SESSION, session.component1());
 
                     float zoom = aFloat;
-                    intent.putExtra(ZOOM, aFloat);
+                    intent.putExtra(Z_DIFF, aFloat);
 
                     sendBroadcast(intent);
-                }
+                } else
+                    cameraController.cameraZoom(aFloat);
             }
         });
 
@@ -712,8 +923,11 @@ public class ModelActivity extends AppCompatActivity implements EventListener {
             @Override
             public void onChanged(Integer integer) {
                 if (userType.equals(TEACHER)){
-
-                }
+                    Intent intent = new Intent(UPDATE_SELECTION_INTENT);
+                    intent.putExtra(SELECTION, integer);
+                    sendBroadcast(intent);
+                } else
+                    scene.setSelectedObjectIndex(integer);
             }
         });
 
@@ -721,9 +935,497 @@ public class ModelActivity extends AppCompatActivity implements EventListener {
             @Override
             public void onChanged(SceneLoader.Mode mode) {
                 if (userType.equals(TEACHER)){
-
+                    Intent intent = new Intent(SELECTION_MODE_INTENT);
+                    intent.putExtra(SELECTION_MODE, mode.name());
+                    sendBroadcast(intent);
+                } else {
+                    scene.setCurrentMode(mode);
+                    Toast.makeText(getApplicationContext(), "Selection mode updated: " + mode.name(), Toast.LENGTH_SHORT).show();
                 }
             }
         });
+    }
+
+    /*
+     * Get the preferred audio codec from shared preferences
+     */
+    private AudioCodec getAudioCodecPreference(String key, String defaultValue) {
+        final String audioCodecName = preferences.getString(key, defaultValue);
+
+        switch (audioCodecName) {
+            case IsacCodec.NAME:
+                return new IsacCodec();
+            case OpusCodec.NAME:
+                return new OpusCodec();
+            case PcmaCodec.NAME:
+                return new PcmaCodec();
+            case PcmuCodec.NAME:
+                return new PcmuCodec();
+            case G722Codec.NAME:
+                return new G722Codec();
+            default:
+                return new OpusCodec();
+        }
+    }
+
+    private boolean getAutomaticSubscriptionPreference(String key, boolean defaultValue) {
+        return preferences.getBoolean(key, defaultValue);
+    }
+
+    private EncodingParameters getEncodingParameters() {
+        final int maxAudioBitrate = Integer.parseInt(
+                preferences.getString(PREF_SENDER_MAX_AUDIO_BITRATE,
+                        PREF_SENDER_MAX_AUDIO_BITRATE_DEFAULT));
+        final int maxVideoBitrate = Integer.parseInt(
+                preferences.getString(PREF_SENDER_MAX_VIDEO_BITRATE,
+                        PREF_SENDER_MAX_VIDEO_BITRATE_DEFAULT));
+
+        return new EncodingParameters(maxAudioBitrate, maxVideoBitrate);
+    }
+
+    /*
+     * The actions performed during disconnect.
+     */
+//    private void setDisconnectAction() {
+//        connectActionFab.setImageDrawable(ContextCompat.getDrawable(this,
+//                R.drawable.ic_call_end_white_24px));
+//        connectActionFab.show();
+//        connectActionFab.setOnClickListener(disconnectClickListener());
+//    }
+
+    private void createAudioAndVideoTracks() {
+        // Share your microphone
+        localAudioTrack = LocalAudioTrack.create(this, true, LOCAL_AUDIO_TRACK_NAME);
+    }
+
+    private void setAccessToken() {
+        if (!BuildConfig.USE_TOKEN_SERVER) {
+            /*
+             * OPTION 1 - Generate an access token from the getting started portal
+             * https://www.twilio.com/console/video/dev-tools/testing-tools and add
+             * the variable TWILIO_ACCESS_TOKEN setting it equal to the access token
+             * string in your local.properties file.
+             */
+            this.accessToken = TWILIO_ACCESS_TOKEN;
+        } else {
+            /*
+             * OPTION 2 - Retrieve an access token from your own web app.
+             * Add the variable ACCESS_TOKEN_SERVER assigning it to the url of your
+             * token server and the variable USE_TOKEN_SERVER=true to your
+             * local.properties file.
+             */
+            retrieveAccessTokenfromServer();
+        }
+
+        if (session != null) {
+            connectToRoom(session.component1());
+        }
+    }
+
+    private void connectToRoom(String roomName) {
+        audioSwitch.activate();
+        ConnectOptions.Builder connectOptionsBuilder = new ConnectOptions.Builder(accessToken)
+                .roomName(roomName);
+
+        /*
+         * Add local audio track to connect options to share with participants.
+         */
+        if (localAudioTrack != null) {
+            connectOptionsBuilder
+                    .audioTracks(Collections.singletonList(localAudioTrack));
+        }
+
+        /*
+         * Set the preferred audio and video codec for media.
+         */
+        connectOptionsBuilder.preferAudioCodecs(Collections.singletonList(audioCodec));
+
+        /*
+         * Set the sender side encoding parameters.
+         */
+        connectOptionsBuilder.encodingParameters(encodingParameters);
+
+        /*
+         * Toggles automatic track subscription. If set to false, the LocalParticipant will receive
+         * notifications of track publish events, but will not automatically subscribe to them. If
+         * set to true, the LocalParticipant will automatically subscribe to tracks as they are
+         * published. If unset, the default is true. Note: This feature is only available for Group
+         * Rooms. Toggling the flag in a P2P room does not modify subscription behavior.
+         */
+        connectOptionsBuilder.enableAutomaticSubscription(enableAutomaticSubscription);
+
+        room = Video.connect(this, connectOptionsBuilder.build(), roomListener());
+//        setDisconnectAction();
+    }
+
+    private boolean checkPermissionForCameraAndMicrophone() {
+        int resultMic = ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO);
+        return resultMic == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private void requestPermissionForCameraAndMicrophone() {
+        if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                        Manifest.permission.RECORD_AUDIO)) {
+            Toast.makeText(this,
+                    R.string.permissions_needed,
+                    Toast.LENGTH_LONG).show();
+        } else {
+            ActivityCompat.requestPermissions(
+                    this,
+                    new String[]{Manifest.permission.RECORD_AUDIO},
+                    MIC_PERMISSION_REQUEST_CODE);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        if (requestCode == MIC_PERMISSION_REQUEST_CODE) {
+            boolean cameraAndMicPermissionGranted = true;
+
+            for (int grantResult : grantResults) {
+                cameraAndMicPermissionGranted &= grantResult == PackageManager.PERMISSION_GRANTED;
+            }
+
+            if (cameraAndMicPermissionGranted) {
+                createAudioAndVideoTracks();
+                setAccessToken();
+            } else {
+                Toast.makeText(this,
+                        R.string.permissions_needed,
+                        Toast.LENGTH_LONG).show();
+            }
+        }
+    }
+
+    private void retrieveAccessTokenfromServer() {
+        Ion.with(this)
+                .load(String.format("%s?identity=%s", ACCESS_TOKEN_SERVER,
+                        UUID.randomUUID().toString()))
+                .asString()
+                .setCallback((e, token) -> {
+                    if (e == null) {
+                        accessToken = token;
+                    } else {
+                        Toast.makeText(this,
+                                R.string.error_retrieving_access_token, Toast.LENGTH_LONG)
+                                .show();
+                    }
+                });
+    }
+
+    /*
+     * Room events listener
+     */
+    @SuppressLint("SetTextI18n")
+    private Room.Listener roomListener() {
+        return new Room.Listener() {
+            @Override
+            public void onConnected(Room room) {
+                localParticipant = room.getLocalParticipant();
+                setTitle(room.getName());
+
+                for (RemoteParticipant remoteParticipant : room.getRemoteParticipants()) {
+//                    addRemoteParticipant(remoteParticipant);
+                    break;
+                }
+            }
+
+            @Override
+            public void onReconnecting(@NonNull Room room, @NonNull TwilioException twilioException) {
+//                reconnectingProgressBar.setVisibility(View.VISIBLE);
+            }
+
+            @Override
+            public void onReconnected(@NonNull Room room) {
+//                reconnectingProgressBar.setVisibility(View.GONE);
+            }
+
+            @Override
+            public void onConnectFailure(Room room, TwilioException e) {
+                audioSwitch.deactivate();
+//                intializeUI();
+            }
+
+            @Override
+            public void onDisconnected(Room room, TwilioException e) {
+                localParticipant = null;
+//                reconnectingProgressBar.setVisibility(View.GONE);
+                ModelActivity.this.room = null;
+                // Only reinitialize the UI if disconnect was not called from onDestroy()
+                if (!disconnectedFromOnDestroy) {
+                    audioSwitch.deactivate();
+//                    intializeUI();
+//                    moveLocalVideoToPrimaryView();
+                }
+            }
+
+            @Override
+            public void onParticipantConnected(Room room, RemoteParticipant remoteParticipant) {
+//                addRemoteParticipant(remoteParticipant);
+
+            }
+
+            @Override
+            public void onParticipantDisconnected(Room room, RemoteParticipant remoteParticipant) {
+//                removeRemoteParticipant(remoteParticipant);
+            }
+
+            @Override
+            public void onRecordingStarted(Room room) {
+                /*
+                 * Indicates when media shared to a Room is being recorded. Note that
+                 * recording is only available in our Group Rooms developer preview.
+                 */
+                Log.d(getLocalClassName(), "onRecordingStarted");
+            }
+
+            @Override
+            public void onRecordingStopped(Room room) {
+                /*
+                 * Indicates when media shared to a Room is no longer being recorded. Note that
+                 * recording is only available in our Group Rooms developer preview.
+                 */
+                Log.d(getLocalClassName(), "onRecordingStopped");
+            }
+        };
+    }
+
+    @SuppressLint("SetTextI18n")
+    private RemoteParticipant.Listener remoteParticipantListener() {
+        return new RemoteParticipant.Listener() {
+            @Override
+            public void onAudioTrackPublished(RemoteParticipant remoteParticipant,
+                                              RemoteAudioTrackPublication remoteAudioTrackPublication) {
+                Log.i(getLocalClassName(), String.format("onAudioTrackPublished: " +
+                                "[RemoteParticipant: identity=%s], " +
+                                "[RemoteAudioTrackPublication: sid=%s, enabled=%b, " +
+                                "subscribed=%b, name=%s]",
+                        remoteParticipant.getIdentity(),
+                        remoteAudioTrackPublication.getTrackSid(),
+                        remoteAudioTrackPublication.isTrackEnabled(),
+                        remoteAudioTrackPublication.isTrackSubscribed(),
+                        remoteAudioTrackPublication.getTrackName()));
+            }
+
+            @Override
+            public void onAudioTrackUnpublished(RemoteParticipant remoteParticipant,
+                                                RemoteAudioTrackPublication remoteAudioTrackPublication) {
+                Log.i(getLocalClassName(), String.format("onAudioTrackUnpublished: " +
+                                "[RemoteParticipant: identity=%s], " +
+                                "[RemoteAudioTrackPublication: sid=%s, enabled=%b, " +
+                                "subscribed=%b, name=%s]",
+                        remoteParticipant.getIdentity(),
+                        remoteAudioTrackPublication.getTrackSid(),
+                        remoteAudioTrackPublication.isTrackEnabled(),
+                        remoteAudioTrackPublication.isTrackSubscribed(),
+                        remoteAudioTrackPublication.getTrackName()));
+            }
+
+            @Override
+            public void onDataTrackPublished(RemoteParticipant remoteParticipant,
+                                             RemoteDataTrackPublication remoteDataTrackPublication) {
+                Log.i(getLocalClassName(), String.format("onDataTrackPublished: " +
+                                "[RemoteParticipant: identity=%s], " +
+                                "[RemoteDataTrackPublication: sid=%s, enabled=%b, " +
+                                "subscribed=%b, name=%s]",
+                        remoteParticipant.getIdentity(),
+                        remoteDataTrackPublication.getTrackSid(),
+                        remoteDataTrackPublication.isTrackEnabled(),
+                        remoteDataTrackPublication.isTrackSubscribed(),
+                        remoteDataTrackPublication.getTrackName()));
+            }
+
+            @Override
+            public void onDataTrackUnpublished(RemoteParticipant remoteParticipant,
+                                               RemoteDataTrackPublication remoteDataTrackPublication) {
+                Log.i(getLocalClassName(), String.format("onDataTrackUnpublished: " +
+                                "[RemoteParticipant: identity=%s], " +
+                                "[RemoteDataTrackPublication: sid=%s, enabled=%b, " +
+                                "subscribed=%b, name=%s]",
+                        remoteParticipant.getIdentity(),
+                        remoteDataTrackPublication.getTrackSid(),
+                        remoteDataTrackPublication.isTrackEnabled(),
+                        remoteDataTrackPublication.isTrackSubscribed(),
+                        remoteDataTrackPublication.getTrackName()));
+            }
+
+            @Override
+            public void onVideoTrackPublished(RemoteParticipant remoteParticipant,
+                                              RemoteVideoTrackPublication remoteVideoTrackPublication) {
+                Log.i(getLocalClassName(), String.format("onVideoTrackPublished: " +
+                                "[RemoteParticipant: identity=%s], " +
+                                "[RemoteVideoTrackPublication: sid=%s, enabled=%b, " +
+                                "subscribed=%b, name=%s]",
+                        remoteParticipant.getIdentity(),
+                        remoteVideoTrackPublication.getTrackSid(),
+                        remoteVideoTrackPublication.isTrackEnabled(),
+                        remoteVideoTrackPublication.isTrackSubscribed(),
+                        remoteVideoTrackPublication.getTrackName()));
+            }
+
+            @Override
+            public void onVideoTrackUnpublished(RemoteParticipant remoteParticipant,
+                                                RemoteVideoTrackPublication remoteVideoTrackPublication) {
+                Log.i(getLocalClassName(), String.format("onVideoTrackUnpublished: " +
+                                "[RemoteParticipant: identity=%s], " +
+                                "[RemoteVideoTrackPublication: sid=%s, enabled=%b, " +
+                                "subscribed=%b, name=%s]",
+                        remoteParticipant.getIdentity(),
+                        remoteVideoTrackPublication.getTrackSid(),
+                        remoteVideoTrackPublication.isTrackEnabled(),
+                        remoteVideoTrackPublication.isTrackSubscribed(),
+                        remoteVideoTrackPublication.getTrackName()));
+            }
+
+            @Override
+            public void onAudioTrackSubscribed(RemoteParticipant remoteParticipant,
+                                               RemoteAudioTrackPublication remoteAudioTrackPublication,
+                                               RemoteAudioTrack remoteAudioTrack) {
+                Log.i(getLocalClassName(), String.format("onAudioTrackSubscribed: " +
+                                "[RemoteParticipant: identity=%s], " +
+                                "[RemoteAudioTrack: enabled=%b, playbackEnabled=%b, name=%s]",
+                        remoteParticipant.getIdentity(),
+                        remoteAudioTrack.isEnabled(),
+                        remoteAudioTrack.isPlaybackEnabled(),
+                        remoteAudioTrack.getName()));
+            }
+
+            @Override
+            public void onAudioTrackUnsubscribed(RemoteParticipant remoteParticipant,
+                                                 RemoteAudioTrackPublication remoteAudioTrackPublication,
+                                                 RemoteAudioTrack remoteAudioTrack) {
+                Log.i(getLocalClassName(), String.format("onAudioTrackUnsubscribed: " +
+                                "[RemoteParticipant: identity=%s], " +
+                                "[RemoteAudioTrack: enabled=%b, playbackEnabled=%b, name=%s]",
+                        remoteParticipant.getIdentity(),
+                        remoteAudioTrack.isEnabled(),
+                        remoteAudioTrack.isPlaybackEnabled(),
+                        remoteAudioTrack.getName()));
+            }
+
+            @Override
+            public void onAudioTrackSubscriptionFailed(RemoteParticipant remoteParticipant,
+                                                       RemoteAudioTrackPublication remoteAudioTrackPublication,
+                                                       TwilioException twilioException) {
+                Log.i(getLocalClassName(), String.format("onAudioTrackSubscriptionFailed: " +
+                                "[RemoteParticipant: identity=%s], " +
+                                "[RemoteAudioTrackPublication: sid=%b, name=%s]" +
+                                "[TwilioException: code=%d, message=%s]",
+                        remoteParticipant.getIdentity(),
+                        remoteAudioTrackPublication.getTrackSid(),
+                        remoteAudioTrackPublication.getTrackName(),
+                        twilioException.getCode(),
+                        twilioException.getMessage()));
+            }
+
+            @Override
+            public void onDataTrackSubscribed(RemoteParticipant remoteParticipant,
+                                              RemoteDataTrackPublication remoteDataTrackPublication,
+                                              RemoteDataTrack remoteDataTrack) {
+                Log.i(getLocalClassName(), String.format("onDataTrackSubscribed: " +
+                                "[RemoteParticipant: identity=%s], " +
+                                "[RemoteDataTrack: enabled=%b, name=%s]",
+                        remoteParticipant.getIdentity(),
+                        remoteDataTrack.isEnabled(),
+                        remoteDataTrack.getName()));
+            }
+
+            @Override
+            public void onDataTrackUnsubscribed(RemoteParticipant remoteParticipant,
+                                                RemoteDataTrackPublication remoteDataTrackPublication,
+                                                RemoteDataTrack remoteDataTrack) {
+                Log.i(getLocalClassName(), String.format("onDataTrackUnsubscribed: " +
+                                "[RemoteParticipant: identity=%s], " +
+                                "[RemoteDataTrack: enabled=%b, name=%s]",
+                        remoteParticipant.getIdentity(),
+                        remoteDataTrack.isEnabled(),
+                        remoteDataTrack.getName()));
+            }
+
+            @Override
+            public void onDataTrackSubscriptionFailed(RemoteParticipant remoteParticipant,
+                                                      RemoteDataTrackPublication remoteDataTrackPublication,
+                                                      TwilioException twilioException) {
+                Log.i(getLocalClassName(), String.format("onDataTrackSubscriptionFailed: " +
+                                "[RemoteParticipant: identity=%s], " +
+                                "[RemoteDataTrackPublication: sid=%b, name=%s]" +
+                                "[TwilioException: code=%d, message=%s]",
+                        remoteParticipant.getIdentity(),
+                        remoteDataTrackPublication.getTrackSid(),
+                        remoteDataTrackPublication.getTrackName(),
+                        twilioException.getCode(),
+                        twilioException.getMessage()));
+            }
+
+            @Override
+            public void onVideoTrackSubscribed(RemoteParticipant remoteParticipant,
+                                               RemoteVideoTrackPublication remoteVideoTrackPublication,
+                                               RemoteVideoTrack remoteVideoTrack) {
+                Log.i(getLocalClassName(), String.format("onVideoTrackSubscribed: " +
+                                "[RemoteParticipant: identity=%s], " +
+                                "[RemoteVideoTrack: enabled=%b, name=%s]",
+                        remoteParticipant.getIdentity(),
+                        remoteVideoTrack.isEnabled(),
+                        remoteVideoTrack.getName()));
+//                addRemoteParticipantVideo(remoteVideoTrack);
+            }
+
+            @Override
+            public void onVideoTrackUnsubscribed(RemoteParticipant remoteParticipant,
+                                                 RemoteVideoTrackPublication remoteVideoTrackPublication,
+                                                 RemoteVideoTrack remoteVideoTrack) {
+                Log.i(getLocalClassName(), String.format("onVideoTrackUnsubscribed: " +
+                                "[RemoteParticipant: identity=%s], " +
+                                "[RemoteVideoTrack: enabled=%b, name=%s]",
+                        remoteParticipant.getIdentity(),
+                        remoteVideoTrack.isEnabled(),
+                        remoteVideoTrack.getName()));
+//                removeParticipantVideo(remoteVideoTrack);
+            }
+
+            @Override
+            public void onVideoTrackSubscriptionFailed(RemoteParticipant remoteParticipant,
+                                                       RemoteVideoTrackPublication remoteVideoTrackPublication,
+                                                       TwilioException twilioException) {
+                Log.i(getLocalClassName(), String.format("onVideoTrackSubscriptionFailed: " +
+                                "[RemoteParticipant: identity=%s], " +
+                                "[RemoteVideoTrackPublication: sid=%b, name=%s]" +
+                                "[TwilioException: code=%d, message=%s]",
+                        remoteParticipant.getIdentity(),
+                        remoteVideoTrackPublication.getTrackSid(),
+                        remoteVideoTrackPublication.getTrackName(),
+                        twilioException.getCode(),
+                        twilioException.getMessage()));
+                Toast.makeText(ModelActivity.this,
+                        String.format("Failed to subscribe to %s video track",
+                                remoteParticipant.getIdentity()),
+                        Toast.LENGTH_LONG)
+                        .show();
+            }
+
+            @Override
+            public void onAudioTrackEnabled(RemoteParticipant remoteParticipant,
+                                            RemoteAudioTrackPublication remoteAudioTrackPublication) {
+
+            }
+
+            @Override
+            public void onAudioTrackDisabled(RemoteParticipant remoteParticipant,
+                                             RemoteAudioTrackPublication remoteAudioTrackPublication) {
+
+            }
+
+            @Override
+            public void onVideoTrackEnabled(RemoteParticipant remoteParticipant,
+                                            RemoteVideoTrackPublication remoteVideoTrackPublication) {
+
+            }
+
+            @Override
+            public void onVideoTrackDisabled(RemoteParticipant remoteParticipant,
+                                             RemoteVideoTrackPublication remoteVideoTrackPublication) {
+
+            }
+        };
     }
 }

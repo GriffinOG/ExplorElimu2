@@ -1,2 +1,2 @@
-include ':app',':render',':engine'
+include ':app',':render',':engine',':twilio'
 rootProject.name = "ExplorElimu"

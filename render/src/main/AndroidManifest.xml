@@ -22,14 +22,14 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.ExplorElimu"
         android:usesCleartextTraffic="true">
+        <activity android:name=".ui.MessagesActivity"></activity>
         <activity
             android:name=".ReviewActivity"
             android:label="Model Review" />
         <activity
             android:name=".AddModelActivity"
-            android:label="Model Details"
-            />
-        <activity android:name=".MainActivity"></activity>
+            android:label="Model Details" />
+        <activity android:name=".MainActivity" />
         <activity
             android:name=".view.MenuActivity"
             android:label="@string/title_activity_menu"
@@ -38,7 +38,6 @@
             android:name=".view.TextActivity"
             android:label="@string/title_activity_text"
             android:parentActivityName=".MainActivity" />
-
     </application>
 
 </manifest>

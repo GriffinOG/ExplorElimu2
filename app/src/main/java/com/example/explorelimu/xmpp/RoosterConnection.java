@@ -1,6 +1,5 @@
 package com.example.explorelimu.xmpp;
 
-import android.app.Notification;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -9,10 +8,7 @@ import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
-import androidx.core.app.NotificationCompat;
-
 import com.example.explorelimu.R;
-import com.example.explorelimu.data.session.Session;
 import com.example.explorelimu.data.session.SessionsRepository;
 
 import org.jivesoftware.smack.ConnectionConfiguration;
@@ -42,7 +38,6 @@ import org.jivesoftware.smackx.receipts.DeliveryReceiptManager;
 import org.jivesoftware.smackx.receipts.ReceiptReceivedListener;
 import org.jivesoftware.smackx.vcardtemp.VCardManager;
 import org.jivesoftware.smackx.vcardtemp.packet.VCard;
-import org.jxmpp.jid.BareJid;
 import org.jxmpp.jid.DomainBareJid;
 import org.jxmpp.jid.EntityBareJid;
 import org.jxmpp.jid.EntityJid;
@@ -63,10 +58,17 @@ import java.util.Set;
 
 import static com.example.explorelimu.util.HelperKt.MOVE;
 import static com.example.explorelimu.util.HelperKt.MOVE_INTENT;
+import static com.example.explorelimu.util.HelperKt.OBJ_ID;
+import static com.example.explorelimu.util.HelperKt.PINCH;
 import static com.example.explorelimu.util.HelperKt.PINCH_INTENT;
+import static com.example.explorelimu.util.HelperKt.SELECTION;
+import static com.example.explorelimu.util.HelperKt.SELECTION_MODE;
+import static com.example.explorelimu.util.HelperKt.SELECTION_MODE_INTENT;
 import static com.example.explorelimu.util.HelperKt.SESSION;
-import static com.example.explorelimu.util.HelperKt.X_ORDINATE;
-import static com.example.explorelimu.util.HelperKt.Y_ORDINATE;
+import static com.example.explorelimu.util.HelperKt.UPDATE_SELECTION_INTENT;
+import static com.example.explorelimu.util.HelperKt.X_DIFF;
+import static com.example.explorelimu.util.HelperKt.Y_DIFF;
+import static com.example.explorelimu.util.HelperKt.Z_DIFF;
 
 public class RoosterConnection implements ConnectionListener {
 
@@ -97,10 +99,6 @@ public class RoosterConnection implements ConnectionListener {
     private Roster roster;
 
     private SessionsRepository sessionsRepository;
-//    private ChatDatabase chatDatabase;
-//    private MsgDao msgDao;
-//    private ConversationDao conversationDao;
-//    private MessageRepository messageRepository;
 
     XMPPTCPConnection getmConnection() {
         return mConnection;
@@ -525,14 +523,38 @@ public class RoosterConnection implements ConnectionListener {
         chatMessageReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
+                MultiUserChat currentMuc = null;
+                try {
+                    currentMuc = multiUserChatManager.getMultiUserChat(JidCreate
+                            .entityBareFrom(intent.getStringExtra(SESSION) + "@" + context.getResources().getString(R.string.muc_service)));
+                } catch (XmppStringprepException e) {
+                    Log.e(getClass().getName() + " getMuc", e.getMessage());
+                }
                 if (intent.getAction().equals(MOVE_INTENT)){
                     try {
-                        MultiUserChat currentMuc = multiUserChatManager.getMultiUserChat(JidCreate
-                                .entityBareFrom(intent.getStringExtra(SESSION) + "@" + context.getResources().getString(R.string.muc_service)));
-                        currentMuc.sendMessage(MOVE + ":x" + intent.getFloatExtra(X_ORDINATE, 0.0f)
-                                + ",y" + intent.getFloatExtra(Y_ORDINATE, 0.0f));
-                    } catch (XmppStringprepException e) {
-                        Log.e(getClass().getName() + " createMuc", e.getMessage());
+                        currentMuc.sendMessage(MOVE + ":x" + intent.getFloatExtra(X_DIFF, 0.0f)
+                                + ",y" + intent.getFloatExtra(Y_DIFF, 0.0f));
+                    } catch (SmackException.NotConnectedException | InterruptedException e) {
+                        Log.e(getClass().getName() + " sendMsg", e.getMessage());
+                    }
+                } else if (intent.getAction().equals(PINCH_INTENT)){
+                    try {
+                        currentMuc.sendMessage( PINCH + ":z" + intent.getFloatExtra(Z_DIFF, 0.0f));
+                        Log.d(getClass().getName(), "Pinch msg sent");
+                    } catch (SmackException.NotConnectedException | InterruptedException e) {
+                        Log.e(getClass().getName() + " sendMsg", e.getMessage());
+                    }
+                } else if (intent.getAction().equals(SELECTION_MODE_INTENT)){
+                    try {
+                        currentMuc.sendMessage( SELECTION_MODE + ":" + intent.getStringExtra(SELECTION_MODE));
+                        Log.d(getClass().getName(), "Selection msg sent");
+                    } catch (SmackException.NotConnectedException | InterruptedException e) {
+                        Log.e(getClass().getName() + " sendMsg", e.getMessage());
+                    }
+                } else if (intent.getAction().equals(UPDATE_SELECTION_INTENT)){
+                    try {
+                        currentMuc.sendMessage( OBJ_ID + ":" + intent.getIntExtra(SELECTION, -1));
+                        Log.d(getClass().getName(), "Selection msg sent");
                     } catch (SmackException.NotConnectedException | InterruptedException e) {
                         Log.e(getClass().getName() + " sendMsg", e.getMessage());
                     }
@@ -543,6 +565,8 @@ public class RoosterConnection implements ConnectionListener {
         IntentFilter filter = new IntentFilter();
         filter.addAction(MOVE_INTENT);
         filter.addAction(PINCH_INTENT);
+        filter.addAction(SELECTION_MODE_INTENT);
+        filter.addAction(UPDATE_SELECTION_INTENT);
         mApplicationContext.registerReceiver(chatMessageReceiver,filter);
 
 //        statusReceiver = new BroadcastReceiver() {

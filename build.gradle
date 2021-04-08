@@ -2,8 +2,44 @@
 buildscript {
     ext.kotlin_version = '1.5.0-M1'
     ext.kotlin_version = "1.4.21"
+    ext.versions = [
+            'java'               : JavaVersion.VERSION_1_8,
+            'androidGradlePlugin': '4.1.1',
+            'googleServices'     : '3.2.1',
+            'compileSdk'         : 30,
+            'buildTools'         : '28.0.3',
+            'minSdk'             : 16,
+            'targetSdk'          : 30,
+            'supportLibrary'     : '26.1.0',
+            'constraintLayout'   : '1.1.3',
+            'firebase'           : '10.0.1',
+            'retrofit'           : '2.0.0-beta4',
+            'okhttp'             : '3.6.0',
+            'ion'                : '2.1.8',
+            'videoAndroid'       : '6.2.1',
+            'audioSwitch'        : '1.1.2'
+    ]
+
+    ext.getSecretProperty = { key, defaultValue ->
+        def value = System.getenv(key)
+
+        if (value == null) {
+            Properties properties = new Properties()
+            if (project.rootProject.file('local.properties').exists()) {
+                properties.load(project.rootProject.file('local.properties').newDataInputStream())
+                value = properties.getProperty(key)
+            }
+        }
+
+        if (value == null) {
+            value = defaultValue
+        }
+
+        return value
+    }
     repositories {
         google()
+        mavenCentral()
         jcenter()
     }
     dependencies {
@@ -21,6 +57,7 @@ buildscript {
 allprojects {
     repositories {
         google()
+        mavenCentral()
         jcenter()
     }
 }

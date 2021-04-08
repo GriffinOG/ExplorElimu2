@@ -24,6 +24,8 @@ import com.google.android.gms.tasks.OnSuccessListener
 import com.google.firebase.storage.FileDownloadTask
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
+import com.twilio.video.OpusCodec
+import com.twilio.video.Vp8Codec
 import java.io.File
 import java.net.URI
 import java.net.URISyntaxException
@@ -35,13 +37,25 @@ const val STUDENT = "student"
 const val TEACHER = "educator"
 const val MOVE_INTENT = "move event"
 const val PINCH_INTENT = "pinch event"
+const val SELECTION_MODE_INTENT = "selection mode event"
+const val UPDATE_SELECTION_INTENT = "update selection event"
 const val SESSION = "session"
-const val X_ORDINATE = "x"
-const val Y_ORDINATE = "y"
-const val ZOOM = "z"
+const val X_DIFF = "x"
+const val Y_DIFF = "y"
+const val Z_DIFF = "z"
+const val OBJ_ID = "id"
 const val MOVE = "MOVE"
-const val RCVD_COORD = "received coordinates"
-
+const val PINCH = "PINCH"
+const val SELECTION_MODE = "SELECTION MODE"
+const val SELECTION = "SELECTION"
+const val PREF_SENDER_MAX_AUDIO_BITRATE = "sender_max_audio_bitrate"
+const val PREF_SENDER_MAX_AUDIO_BITRATE_DEFAULT = "0"
+const val PREF_SENDER_MAX_VIDEO_BITRATE = "sender_max_video_bitrate"
+const val PREF_SENDER_MAX_VIDEO_BITRATE_DEFAULT = "0"
+const val PREF_AUDIO_CODEC = "audio_codec"
+const val PREF_AUDIO_CODEC_DEFAULT = OpusCodec.NAME
+const val PREF_ENABLE_AUTOMATIC_SUBSCRIPTION = "enable_automatic_subscription"
+const val PREF_ENABLE_AUTOMATIC_SUBSCRIPTION_DEFAULT = true
 
 fun getFirebaseFileRef(fileName: String): StorageReference{
     val storage = FirebaseStorage.getInstance()
@@ -60,13 +74,17 @@ fun downloadModel(context: Context, fileName: String, modelId: Int){
 
     val fileRef = storageRef.child("models/$fileName")
 
-    val localFile: File = File.createTempFile(fileName.substringBefore('.'), "." + fileName.substringAfter('.'), (context as MainActivity).outputDirectory)
+    val localFile: File = File.createTempFile(
+        fileName.substringBefore('.'), "." + fileName.substringAfter(
+            '.'
+        ), (context as MainActivity).outputDirectory
+    )
 
     val dialog: ProgressDialog = ProgressDialog(context)
     dialog.setMessage("Fetching model. Please wait.")
     dialog.show()
     val addOnFailureListener = fileRef.getFile(localFile).addOnSuccessListener(object :
-            OnSuccessListener<FileDownloadTask.TaskSnapshot?> {
+        OnSuccessListener<FileDownloadTask.TaskSnapshot?> {
 
         override fun onSuccess(p0: FileDownloadTask.TaskSnapshot?) {
             Log.d(javaClass.name + " uri", localFile.absolutePath)
@@ -74,14 +92,19 @@ fun downloadModel(context: Context, fileName: String, modelId: Int){
             if (dialog.isShowing) {
                 dialog.dismiss()
             }
-            launchModelRendererActivity(context, Uri.parse("file://" + localFile.absolutePath), modelId)
+            launchModelRendererActivity(
+                context,
+                Uri.parse("file://" + localFile.absolutePath),
+                modelId
+            )
             incrementViews(context, fileName)
         }
     }).addOnFailureListener(OnFailureListener {
         if (dialog.isShowing) {
             dialog.dismiss()
         }
-        Toast.makeText(context, "Something went wrong. Please try again later.", Toast.LENGTH_LONG).show()
+        Toast.makeText(context, "Something went wrong. Please try again later.", Toast.LENGTH_LONG)
+            .show()
         // Handle any errors
     })
 
@@ -96,13 +119,17 @@ fun downloadModelToSession(context: Context, fileName: String, session: Session)
 
     val fileRef = storageRef.child("models/$fileName")
 
-    val localFile: File = File.createTempFile(fileName.substringBefore('.'), "." + fileName.substringAfter('.'), (context as MainActivity).outputDirectory)
+    val localFile: File = File.createTempFile(
+        fileName.substringBefore('.'), "." + fileName.substringAfter(
+            '.'
+        ), (context as MainActivity).outputDirectory
+    )
 
     val dialog: ProgressDialog = ProgressDialog(context)
     dialog.setMessage("Fetching model. Please wait.")
     dialog.show()
     val addOnFailureListener = fileRef.getFile(localFile).addOnSuccessListener(object :
-            OnSuccessListener<FileDownloadTask.TaskSnapshot?> {
+        OnSuccessListener<FileDownloadTask.TaskSnapshot?> {
 
         override fun onSuccess(p0: FileDownloadTask.TaskSnapshot?) {
             Log.d(javaClass.name + " uri", localFile.absolutePath)
@@ -110,14 +137,19 @@ fun downloadModelToSession(context: Context, fileName: String, session: Session)
             if (dialog.isShowing) {
                 dialog.dismiss()
             }
-            launchModelRendererActivityForSession(context, Uri.parse("file://" + localFile.absolutePath), session)
+            launchModelRendererActivityForSession(
+                context,
+                Uri.parse("file://" + localFile.absolutePath),
+                session
+            )
             incrementViews(context, fileName)
         }
     }).addOnFailureListener(OnFailureListener {
         if (dialog.isShowing) {
             dialog.dismiss()
         }
-        Toast.makeText(context, "Something went wrong. Please try again later.", Toast.LENGTH_LONG).show()
+        Toast.makeText(context, "Something went wrong. Please try again later.", Toast.LENGTH_LONG)
+            .show()
         // Handle any errors
     })
 
@@ -133,7 +165,10 @@ fun launchModelRendererActivity(context: Context, uri: Uri) {
     } catch (e: Exception) {
         // info: filesystem url may contain spaces, therefore we re-encode URI
         try {
-            intent.putExtra("uri", URI(uri.scheme, uri.authority, uri.path, uri.query, uri.fragment).toString())
+            intent.putExtra(
+                "uri",
+                URI(uri.scheme, uri.authority, uri.path, uri.query, uri.fragment).toString()
+            )
         } catch (ex: URISyntaxException) {
             Toast.makeText(context, "Error: $uri", Toast.LENGTH_LONG).show()
             return
@@ -152,7 +187,10 @@ fun launchModelRendererActivity(context: Context, uri: Uri, modelId: Int) {
     } catch (e: Exception) {
         // info: filesystem url may contain spaces, therefore we re-encode URI
         try {
-            intent.putExtra("uri", URI(uri.scheme, uri.authority, uri.path, uri.query, uri.fragment).toString())
+            intent.putExtra(
+                "uri",
+                URI(uri.scheme, uri.authority, uri.path, uri.query, uri.fragment).toString()
+            )
         } catch (ex: URISyntaxException) {
             Toast.makeText(context, "Error: $uri", Toast.LENGTH_LONG).show()
             return
@@ -172,7 +210,10 @@ fun launchModelRendererActivityForSession(context: Context, uri: Uri, session: S
     } catch (e: Exception) {
         // info: filesystem url may contain spaces, therefore we re-encode URI
         try {
-            intent.putExtra("uri", URI(uri.scheme, uri.authority, uri.path, uri.query, uri.fragment).toString())
+            intent.putExtra(
+                "uri",
+                URI(uri.scheme, uri.authority, uri.path, uri.query, uri.fragment).toString()
+            )
         } catch (ex: URISyntaxException) {
             Toast.makeText(context, "Error: $uri", Toast.LENGTH_LONG).show()
             return
@@ -186,22 +227,22 @@ fun launchModelRendererActivityForSession(context: Context, uri: Uri, session: S
 
 fun incrementViews(context: Context, fileName: String) {
     val stringRequest: StringRequest = object : StringRequest(
-            Method.POST, Global.ADD_VIEW_URL,
-            Response.Listener { serverResponse -> // Hiding the progress dialog after all task complete.
+        Method.POST, Global.ADD_VIEW_URL,
+        Response.Listener { serverResponse -> // Hiding the progress dialog after all task complete.
 
-                if (serverResponse.isNullOrEmpty()) {
+            if (serverResponse.isNullOrEmpty()) {
 //                        finish()
-                } else {
-                    // Showing response message coming from server.
-                    Toast.makeText(context, serverResponse, Toast.LENGTH_LONG).show()
-                }
-            },
-            Response.ErrorListener { volleyError -> // Hiding the progress dialog after all task complete.
+            } else {
+                // Showing response message coming from server.
+                Toast.makeText(context, serverResponse, Toast.LENGTH_LONG).show()
+            }
+        },
+        Response.ErrorListener { volleyError -> // Hiding the progress dialog after all task complete.
 //                    progressDialog.dismiss()
 
-                // Showing error message if something goes wrong.
-                Toast.makeText(context, volleyError.toString(), Toast.LENGTH_LONG).show()
-            }) {
+            // Showing error message if something goes wrong.
+            Toast.makeText(context, volleyError.toString(), Toast.LENGTH_LONG).show()
+        }) {
         override fun getParams(): Map<String, String> {
 
             // Creating Map String Params.

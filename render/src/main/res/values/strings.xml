@@ -61,4 +61,7 @@
     <string name="write_a_review">Write a review</string>
     <string name="ip_addr">192.168.43.19</string>
     <string name="muc_service">conference.griffin.chatdiary.com</string>
+    <string name="placeholder_text">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</string>
+    <string name="permissions_needed">Cannot access mic. Permission was denied.</string>
+    <string name="error_retrieving_access_token">Error retrieving access token</string>
 </resources>

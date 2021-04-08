@@ -14,6 +14,7 @@ import androidx.annotation.RequiresApi;
 import org.andresoviedo.android_3d_model_engine.animation.Animator;
 import org.andresoviedo.android_3d_model_engine.collision.CollisionEvent;
 import org.andresoviedo.android_3d_model_engine.controller.TouchEvent;
+import org.andresoviedo.android_3d_model_engine.inclass.ui.SceneViewModel;
 import org.andresoviedo.android_3d_model_engine.model.AnimatedModel;
 import org.andresoviedo.android_3d_model_engine.model.Camera;
 import org.andresoviedo.android_3d_model_engine.model.Dimensions;
@@ -69,6 +70,10 @@ public class SceneLoader implements LoadListener, EventListener {
      * OpenGL view
      */
     private GLSurfaceView glView;
+    /**
+     * Scene viewmodel
+     */
+    private SceneViewModel sceneViewModel;
     /**
      * List of 3D models
      */
@@ -166,6 +171,7 @@ public class SceneLoader implements LoadListener, EventListener {
      * Object selected by the user
      */
     private Object3DData selectedObject = null;
+    private int selectedObjectIndex = -1;
     /**
      * Light bulb 3d data
      */
@@ -231,6 +237,20 @@ public class SceneLoader implements LoadListener, EventListener {
         this.exploded = exploded;
     }
 
+    /**
+     * Index of object selected by the user
+     */
+    public int getSelectedObjectIndex() {
+        return selectedObjectIndex;
+    }
+
+    public void setSelectedObjectIndex(int selectedObjectIndex) {
+        if (selectedObjectIndex != -1){
+            this.selectedObjectIndex = selectedObjectIndex;
+            setSelectedObject(objects.get(selectedObjectIndex));
+        }
+    }
+
     public enum Mode {
         WIRE_OUT, ISOLATE, DROP
     }
@@ -241,11 +261,12 @@ public class SceneLoader implements LoadListener, EventListener {
 
     private boolean exploded = false;
 
-    public SceneLoader(Activity main, URI uri, int type, GLSurfaceView glView) {
+    public SceneLoader(Activity main, URI uri, int type, GLSurfaceView glView, SceneViewModel sceneViewModel) {
         this.parent = main;
         this.uri = uri;
         this.type = type;
         this.glView = glView;
+        this.sceneViewModel = sceneViewModel;
 
         lightBulb.setLocation(new float[]{0, 0, DEFAULT_CAMERA_POSITION});
     }
@@ -790,6 +811,11 @@ public class SceneLoader implements LoadListener, EventListener {
                     Log.i("SceneLoader", "Selected object " + objectToSelect.getId());
                     Log.d("SceneLoader", "Selected object " + objectToSelect);
                     setSelectedObject(objectToSelect);
+                    for (int i = 0; i < objects.size(); i++){
+                        if (selectedObject == objects.get(i)){
+                            sceneViewModel.updateObjId(i);
+                        }
+                    }
                     initialPosObtained = false;
                     selectedObjMoved = false;
                 }

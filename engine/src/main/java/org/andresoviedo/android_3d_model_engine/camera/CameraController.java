@@ -3,8 +3,7 @@ package org.andresoviedo.android_3d_model_engine.camera;
 import android.util.Log;
 
 import org.andresoviedo.android_3d_model_engine.controller.TouchEvent;
-import org.andresoviedo.android_3d_model_engine.inclass.SceneRepository;
-import org.andresoviedo.android_3d_model_engine.inclass.SceneViewModel;
+import org.andresoviedo.android_3d_model_engine.inclass.ui.SceneViewModel;
 import org.andresoviedo.android_3d_model_engine.model.Camera;
 import org.andresoviedo.android_3d_model_engine.view.ModelRenderer;
 import org.andresoviedo.util.event.EventListener;
