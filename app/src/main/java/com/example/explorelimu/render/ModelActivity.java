@@ -100,6 +100,7 @@ import java.util.EventObject;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.logging.Logger;
 
 import kotlin.Unit;
 
@@ -260,6 +261,12 @@ public class ModelActivity extends AppCompatActivity implements EventListener {
         savedVolumeControlStream = getVolumeControlStream();
         setVolumeControlStream(AudioManager.STREAM_VOICE_CALL);
 
+        audioSwitch.start((audioDevices, audioDevice) -> {
+//            updateAudioDeviceIcon(audioDevice);
+
+            return Unit.INSTANCE;
+        });
+
         /*
          * Check camera and microphone permissions. Needed in Android M.
          */
@@ -269,12 +276,6 @@ public class ModelActivity extends AppCompatActivity implements EventListener {
             createAudioAndVideoTracks();
             setAccessToken();
         }
-
-        audioSwitch.start((audioDevices, audioDevice) -> {
-//            updateAudioDeviceIcon(audioDevice);
-
-            return Unit.INSTANCE;
-        });
 
         screenWidth = getScreenWidth(this);
         screenHeight = getScreenHeight(this);
@@ -1017,12 +1018,17 @@ public class ModelActivity extends AppCompatActivity implements EventListener {
             retrieveAccessTokenfromServer();
         }
 
-        if (session != null) {
-            connectToRoom(session.component1());
-        }
+//        if (session != null) {
+//            connectToRoom("sessioncomponent1");
+//            Log.d(getLocalClassName(), "Connect to room called");
+//        }
     }
 
-    private void connectToRoom(String roomName) {
+    private void connectToRoom() {
+        String roomName = null;
+        if (this.getIntent().hasExtra(SESSION)){
+            roomName = ((Session) getIntent().getParcelableExtra(SESSION)).component1();
+        }
         audioSwitch.activate();
         ConnectOptions.Builder connectOptionsBuilder = new ConnectOptions.Builder(accessToken)
                 .roomName(roomName);
@@ -1055,6 +1061,7 @@ public class ModelActivity extends AppCompatActivity implements EventListener {
         connectOptionsBuilder.enableAutomaticSubscription(enableAutomaticSubscription);
 
         room = Video.connect(this, connectOptionsBuilder.build(), roomListener());
+        Log.d(getLocalClassName(), "Done connecting to room");
 //        setDisconnectAction();
     }
 
@@ -1105,10 +1112,13 @@ public class ModelActivity extends AppCompatActivity implements EventListener {
                 .setCallback((e, token) -> {
                     if (e == null) {
                         accessToken = token;
+                        connectToRoom();
+                        Log.d(getLocalClassName(), "Connected to room after token obtained");
                     } else {
                         Toast.makeText(this,
                                 R.string.error_retrieving_access_token, Toast.LENGTH_LONG)
                                 .show();
+                        Log.e(getLocalClassName() + " retrieving token", e.getMessage());
                     }
                 });
     }
@@ -1125,7 +1135,7 @@ public class ModelActivity extends AppCompatActivity implements EventListener {
                 setTitle(room.getName());
 
                 for (RemoteParticipant remoteParticipant : room.getRemoteParticipants()) {
-//                    addRemoteParticipant(remoteParticipant);
+                    addRemoteParticipant(remoteParticipant);
                     break;
                 }
             }
@@ -1161,8 +1171,7 @@ public class ModelActivity extends AppCompatActivity implements EventListener {
 
             @Override
             public void onParticipantConnected(Room room, RemoteParticipant remoteParticipant) {
-//                addRemoteParticipant(remoteParticipant);
-
+                addRemoteParticipant(remoteParticipant);
             }
 
             @Override
@@ -1427,5 +1436,17 @@ public class ModelActivity extends AppCompatActivity implements EventListener {
 
             }
         };
+    }
+
+    /*
+     * Called when remote participant joins the room
+     */
+    @SuppressLint("SetTextI18n")
+    private void addRemoteParticipant(RemoteParticipant remoteParticipant) {
+
+        /*
+         * Start listening for participant events
+         */
+        remoteParticipant.setListener(remoteParticipantListener());
     }
 }
