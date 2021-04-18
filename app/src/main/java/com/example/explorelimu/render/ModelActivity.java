@@ -106,6 +106,7 @@ import kotlin.Unit;
 
 import static com.example.explorelimu.util.HelperKt.MOVE;
 import static com.example.explorelimu.util.HelperKt.MOVE_INTENT;
+import static com.example.explorelimu.util.HelperKt.OBJ_ID;
 import static com.example.explorelimu.util.HelperKt.PINCH;
 import static com.example.explorelimu.util.HelperKt.PINCH_INTENT;
 import static com.example.explorelimu.util.HelperKt.PREF_AUDIO_CODEC;
@@ -273,8 +274,8 @@ public class ModelActivity extends AppCompatActivity implements EventListener {
         if (!checkPermissionForCameraAndMicrophone()) {
             requestPermissionForCameraAndMicrophone();
         } else {
-            createAudioAndVideoTracks();
-            setAccessToken();
+//            createAudioAndVideoTracks();
+//            setAccessToken();
         }
 
         screenWidth = getScreenWidth(this);
@@ -353,12 +354,14 @@ public class ModelActivity extends AppCompatActivity implements EventListener {
                                 } else if (msg.startsWith(PINCH)){
                                     float z = Float.parseFloat(msg.substring(msg.indexOf("z") + 1));
                                     Log.d(getLocalClassName() + "received z", String.valueOf(z));
-                                    sceneViewModel.updateCameraZoom(z);
+                                    if (userType.equals(STUDENT))
+                                        sceneViewModel.updateCameraZoom(z);
                                 } else if (msg.startsWith(SELECTION_MODE)){
 
-                                } else if (msg.startsWith(SELECTION)){
-                                    int selection = Integer.parseInt(msg.substring(msg.indexOf(":")));
-                                    sceneViewModel.updateObjId(selection);
+                                } else if (msg.startsWith(OBJ_ID)){
+                                    int selection = Integer.parseInt(msg.substring(msg.indexOf(":") + 1));
+                                    if (userType.equals(STUDENT))
+                                        sceneViewModel.updateObjId(selection);
                                 }
                             }
                         });
@@ -455,7 +458,7 @@ public class ModelActivity extends AppCompatActivity implements EventListener {
 
         Log.i("ModelActivity", "Finished loading");
 
-        audioSwitch.selectDevice(audioSwitch.getAvailableAudioDevices().get(0));
+        audioSwitch.selectDevice(audioSwitch.getAvailableAudioDevices().get(1));
 
 //        if (selectedDevice == null) {
 //            Log.e(getLocalClassName(), "No selected audio device");
@@ -925,6 +928,7 @@ public class ModelActivity extends AppCompatActivity implements EventListener {
             public void onChanged(Integer integer) {
                 if (userType.equals(TEACHER)){
                     Intent intent = new Intent(UPDATE_SELECTION_INTENT);
+                    intent.putExtra(SESSION, session.component1());
                     intent.putExtra(SELECTION, integer);
                     sendBroadcast(intent);
                 } else
@@ -937,6 +941,7 @@ public class ModelActivity extends AppCompatActivity implements EventListener {
             public void onChanged(SceneLoader.Mode mode) {
                 if (userType.equals(TEACHER)){
                     Intent intent = new Intent(SELECTION_MODE_INTENT);
+                    intent.putExtra(SESSION, session.component1());
                     intent.putExtra(SELECTION_MODE, mode.name());
                     sendBroadcast(intent);
                 } else {

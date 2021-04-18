@@ -38,6 +38,7 @@ import java.util.EventObject;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 /**
  * This class loads a 3D scena as an example of what can be done with the app
@@ -248,6 +249,10 @@ public class SceneLoader implements LoadListener, EventListener {
         if (selectedObjectIndex != -1){
             this.selectedObjectIndex = selectedObjectIndex;
             setSelectedObject(objects.get(selectedObjectIndex));
+            Log.d(getClass().getName(), "Setting selected obj");
+        } else {
+            setSelectedObject(null);
+            clearSelectionsFlag = true;
         }
     }
 
@@ -807,6 +812,7 @@ public class SceneLoader implements LoadListener, EventListener {
                     Log.d("SceneLoader", "Unselected object " + objectToSelect);
                     setSelectedObject(null);
                     clearSelectionsFlag = true;
+                    sceneViewModel.updateObjId(-1);
                 } else {
                     Log.i("SceneLoader", "Selected object " + objectToSelect.getId());
                     Log.d("SceneLoader", "Selected object " + objectToSelect);
@@ -814,6 +820,7 @@ public class SceneLoader implements LoadListener, EventListener {
                     for (int i = 0; i < objects.size(); i++){
                         if (selectedObject == objects.get(i)){
                             sceneViewModel.updateObjId(i);
+                            Log.d(getClass().getName(), "Selection sent");
                         }
                     }
                     initialPosObtained = false;

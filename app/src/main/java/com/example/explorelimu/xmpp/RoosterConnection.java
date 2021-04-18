@@ -553,8 +553,9 @@ public class RoosterConnection implements ConnectionListener {
                     }
                 } else if (intent.getAction().equals(UPDATE_SELECTION_INTENT)){
                     try {
-                        currentMuc.sendMessage( OBJ_ID + ":" + intent.getIntExtra(SELECTION, -1));
-                        Log.d(getClass().getName(), "Selection msg sent");
+                        String msg = OBJ_ID + ":" + intent.getIntExtra(SELECTION, -1);
+                        currentMuc.sendMessage(msg);
+                        Log.d(getClass().getName(), "Selection msg sent: " + msg);
                     } catch (SmackException.NotConnectedException | InterruptedException e) {
                         Log.e(getClass().getName() + " sendMsg", e.getMessage());
                     }

@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.AlertDialog
 import android.app.Dialog
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.AdapterView
 import android.widget.EditText
@@ -73,6 +74,7 @@ class AddSessionDialog: DialogFragment() {
                 id: Long
             ) {
                 model = parent!!.getItemAtPosition(position) as Model
+                Log.d(javaClass.name + " model details", model!!.name)
             }
 
             override fun onNothingSelected(parent: AdapterView<*>?) {
@@ -96,6 +98,7 @@ class AddSessionDialog: DialogFragment() {
         modelsViewModel._instantModels.observe(requireActivity()){ value->
             value.let {
                 modelAdapter.setData(it)
+                Log.d(javaClass.name + " modellist", it[0].name)
             }
         }
 
@@ -105,7 +108,7 @@ class AddSessionDialog: DialogFragment() {
                 ) { dialog, _ ->
                     targetFragment!!.onActivityResult(targetRequestCode, Activity.RESULT_OK,
                         requireActivity().intent.putExtra(SESSION_NAME, sessionNameEditText.text.toString())
-                                .putExtra(MODEL, model))
+                                .putExtra(MODEL, modelSpinner.selectedItem as Model))
                     dialog.dismiss()
                 }
                 .setNegativeButton("Cancel"
